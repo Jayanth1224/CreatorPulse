@@ -1,0 +1,95 @@
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  timezone: string;
+  createdAt: Date;
+}
+
+export interface Bundle {
+  id: string;
+  key: string;
+  label: string;
+  description: string;
+  isPreset: boolean;
+  sources: string[];
+}
+
+export interface Draft {
+  id: string;
+  userId: string;
+  bundleId: string;
+  bundleName: string;
+  topic?: string;
+  tone: "professional" | "conversational" | "analytical" | "friendly";
+  generatedHtml: string;
+  editedHtml?: string;
+  status: "draft" | "sent" | "scheduled";
+  readinessScore?: number;
+  sources: string[];
+  createdAt: Date;
+  updatedAt: Date;
+  sentAt?: Date;
+  scheduledFor?: Date;
+}
+
+export interface DraftSection {
+  id: string;
+  type: "intro" | "insight" | "trends" | "outro";
+  content: string;
+  order: number;
+}
+
+export interface Feedback {
+  id: string;
+  draftId: string;
+  sectionId?: string;
+  reaction: "thumbs_up" | "thumbs_down";
+  editDiff?: string;
+  createdAt: Date;
+}
+
+export interface Analytics {
+  id: string;
+  draftId: string;
+  openedAt?: Date;
+  clickedAt?: Date;
+  sentAt: Date;
+}
+
+export interface AnalyticsSummary {
+  openRate: number;
+  clickThroughRate: number;
+  avgReviewTime: number;
+  draftAcceptanceRate: number;
+  totalDrafts: number;
+  totalSent: number;
+}
+
+export interface ESPCredential {
+  id: string;
+  userId: string;
+  provider: "sendgrid" | "mailgun" | "smtp";
+  apiKey: string;
+  verified: boolean;
+  createdAt: Date;
+}
+
+export interface TonePreset {
+  value: "professional" | "conversational" | "analytical" | "friendly";
+  label: string;
+  description: string;
+}
+
+export interface CreateDraftRequest {
+  bundleId: string;
+  topic?: string;
+  tone?: string;
+}
+
+export interface SendDraftRequest {
+  draftId: string;
+  recipients: string[];
+  subject?: string;
+}
+
