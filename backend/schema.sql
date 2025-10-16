@@ -1,0 +1,226 @@
+-- CreatorPulse Database Schema for Supabase
+-- Run this SQL in your Supabase SQL Editor
+
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Users table (extends Supabase auth.users)
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    timezone TEXT DEFAULT 'America/Los_Angeles',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Bundles table
+CREATE TABLE IF NOT EXISTS bundles (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    key TEXT NOT NULL,
+    label TEXT NOT NULL,
+    description TEXT,
+    is_preset BOOLEAN DEFAULT FALSE,
+    sources JSONB DEFAULT '[]'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Sources table (for tracking RSS feeds)
+CREATE TABLE IF NOT EXISTS sources (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    bundle_id UUID REFERENCES bundles(id) ON DELETE CASCADE,
+    type TEXT DEFAULT 'rss',
+    feed_url TEXT NOT NULL,
+    last_crawled TIMESTAMP WITH TIME ZONE,
+    signal_score FLOAT DEFAULT 1.0,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Drafts table
+CREATE TABLE IF NOT EXISTS drafts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    bundle_id UUID REFERENCES bundles(id) ON DELETE SET NULL,
+    bundle_name TEXT NOT NULL,
+    topic TEXT,
+    tone TEXT DEFAULT 'professional',
+    generated_html TEXT NOT NULL,
+    edited_html TEXT,
+    status TEXT DEFAULT 'draft',
+    readiness_score INTEGER,
+    sources JSONB DEFAULT '[]'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    sent_at TIMESTAMP WITH TIME ZONE,
+    scheduled_for TIMESTAMP WITH TIME ZONE
+);
+
+-- Feedback table
+CREATE TABLE IF NOT EXISTS feedback (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    draft_id UUID REFERENCES drafts(id) ON DELETE CASCADE,
+    section_id TEXT,
+    reaction TEXT CHECK (reaction IN ('thumbs_up', 'thumbs_down')),
+    edit_diff TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Analytics table
+CREATE TABLE IF NOT EXISTS analytics (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    draft_id UUID REFERENCES drafts(id) ON DELETE CASCADE,
+    sent_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    opened_at TIMESTAMP WITH TIME ZONE,
+    clicked_at TIMESTAMP WITH TIME ZONE,
+    recipient_email TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ESP Credentials table (encrypted)
+CREATE TABLE IF NOT EXISTS esp_credentials (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    provider TEXT NOT NULL CHECK (provider IN ('sendgrid', 'mailgun', 'smtp')),
+    encrypted_credentials TEXT NOT NULL,
+    verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- RSS Feed Entries cache (temporary storage)
+CREATE TABLE IF NOT EXISTS rss_entries (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    source_id UUID REFERENCES sources(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    link TEXT NOT NULL,
+    summary TEXT,
+    published_at TIMESTAMP WITH TIME ZONE,
+    author TEXT,
+    content_hash TEXT UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    expires_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() + INTERVAL '48 hours'
+);
+
+-- Create indexes for performance
+CREATE INDEX IF NOT EXISTS idx_drafts_user_id ON drafts(user_id);
+CREATE INDEX IF NOT EXISTS idx_drafts_status ON drafts(status);
+CREATE INDEX IF NOT EXISTS idx_drafts_created_at ON drafts(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_bundles_user_id ON bundles(user_id);
+CREATE INDEX IF NOT EXISTS idx_bundles_is_preset ON bundles(is_preset);
+CREATE INDEX IF NOT EXISTS idx_analytics_draft_id ON analytics(draft_id);
+CREATE INDEX IF NOT EXISTS idx_rss_entries_source_id ON rss_entries(source_id);
+CREATE INDEX IF NOT EXISTS idx_rss_entries_expires_at ON rss_entries(expires_at);
+
+-- Create updated_at trigger function
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Apply updated_at triggers
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_bundles_updated_at BEFORE UPDATE ON bundles
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_drafts_updated_at BEFORE UPDATE ON drafts
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_esp_credentials_updated_at BEFORE UPDATE ON esp_credentials
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE bundles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sources ENABLE ROW LEVEL SECURITY;
+ALTER TABLE drafts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE feedback ENABLE ROW LEVEL SECURITY;
+ALTER TABLE analytics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE esp_credentials ENABLE ROW LEVEL SECURITY;
+ALTER TABLE rss_entries ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for users
+CREATE POLICY "Users can view own profile" ON users
+    FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Users can update own profile" ON users
+    FOR UPDATE USING (auth.uid() = id);
+
+-- RLS Policies for bundles
+CREATE POLICY "Users can view own bundles and presets" ON bundles
+    FOR SELECT USING (user_id = auth.uid() OR is_preset = TRUE);
+
+CREATE POLICY "Users can create own bundles" ON bundles
+    FOR INSERT WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Users can update own bundles" ON bundles
+    FOR UPDATE USING (user_id = auth.uid());
+
+CREATE POLICY "Users can delete own bundles" ON bundles
+    FOR DELETE USING (user_id = auth.uid());
+
+-- RLS Policies for drafts
+CREATE POLICY "Users can view own drafts" ON drafts
+    FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "Users can create own drafts" ON drafts
+    FOR INSERT WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Users can update own drafts" ON drafts
+    FOR UPDATE USING (user_id = auth.uid());
+
+CREATE POLICY "Users can delete own drafts" ON drafts
+    FOR DELETE USING (user_id = auth.uid());
+
+-- RLS Policies for feedback
+CREATE POLICY "Users can view feedback on own drafts" ON feedback
+    FOR SELECT USING (draft_id IN (SELECT id FROM drafts WHERE user_id = auth.uid()));
+
+CREATE POLICY "Users can create feedback on own drafts" ON feedback
+    FOR INSERT WITH CHECK (draft_id IN (SELECT id FROM drafts WHERE user_id = auth.uid()));
+
+-- RLS Policies for analytics
+CREATE POLICY "Users can view analytics on own drafts" ON analytics
+    FOR SELECT USING (draft_id IN (SELECT id FROM drafts WHERE user_id = auth.uid()));
+
+CREATE POLICY "Users can create analytics on own drafts" ON analytics
+    FOR INSERT WITH CHECK (draft_id IN (SELECT id FROM drafts WHERE user_id = auth.uid()));
+
+-- RLS Policies for ESP credentials
+CREATE POLICY "Users can view own ESP credentials" ON esp_credentials
+    FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "Users can manage own ESP credentials" ON esp_credentials
+    FOR ALL USING (user_id = auth.uid());
+
+-- Insert preset bundles
+INSERT INTO bundles (id, key, label, description, is_preset, sources) VALUES
+    ('preset-1', 'ai-ml-trends', 'AI & ML Trends', 'The latest news, research, and breakthroughs in Artificial Intelligence and Machine Learning.', TRUE, '["https://techcrunch.com/category/artificial-intelligence/feed/", "https://venturebeat.com/category/ai/feed/"]'::jsonb),
+    ('preset-2', 'creator-economy', 'Creator Economy', 'Insights on the creator economy, monetization, and platform trends.', TRUE, '[]'::jsonb),
+    ('preset-3', 'marketing-growth', 'Marketing & Growth', 'Growth hacking, marketing strategies, and conversion optimization.', TRUE, '[]'::jsonb),
+    ('preset-4', 'startups-innovation', 'Startups & Innovation', 'Startup news, funding rounds, and innovation in tech.', TRUE, '[]'::jsonb),
+    ('preset-5', 'cybersecurity-privacy', 'Cybersecurity & Privacy', 'Security vulnerabilities, privacy concerns, and data protection news.', TRUE, '[]'::jsonb),
+    ('preset-6', 'productivity-workflow', 'Productivity & Workflow Tools', 'Tools and techniques to boost productivity and streamline workflows.', TRUE, '[]'::jsonb),
+    ('preset-7', 'sustainability-future-tech', 'Sustainability & Future Tech', 'Green technology, climate tech, and sustainable innovation.', TRUE, '[]'::jsonb),
+    ('preset-8', 'tech-policy-regulation', 'Tech Policy & Regulation', 'Regulatory changes, policy debates, and legal issues in tech.', TRUE, '[]'::jsonb),
+    ('preset-9', 'health-wellness-tech', 'Health & Wellness Tech', 'Digital health, wellness apps, and medical technology.', TRUE, '[]'::jsonb),
+    ('preset-10', 'mindset-creativity', 'Mindset & Creativity', 'Creative thinking, mental models, and personal development.', TRUE, '[]'::jsonb)
+ON CONFLICT DO NOTHING;
+
+-- Create cleanup function for expired RSS entries
+CREATE OR REPLACE FUNCTION cleanup_expired_rss_entries()
+RETURNS void AS $$
+BEGIN
+    DELETE FROM rss_entries WHERE expires_at < NOW();
+END;
+$$ LANGUAGE plpgsql;
+
+-- Note: Set up a cron job or use pg_cron extension to run cleanup_expired_rss_entries() periodically
+

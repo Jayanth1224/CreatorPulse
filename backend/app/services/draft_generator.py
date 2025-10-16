@@ -1,0 +1,110 @@
+from typing import Dict
+from datetime import datetime
+from app.services.rss_service import RSSService
+from app.services.ai_service import AIService
+from app.routers.bundles import PRESET_BUNDLES
+import uuid
+
+
+class DraftGeneratorService:
+    """Service to orchestrate draft generation from RSS feeds + AI"""
+    
+    def __init__(self):
+        self.rss_service = RSSService()
+        self.ai_service = AIService()
+    
+    async def generate_draft(
+        self,
+        user_id: str,
+        bundle_id: str,
+        topic: str = None,
+        tone: str = "professional"
+    ) -> Dict:
+        """Generate a complete newsletter draft"""
+        
+        # 1. Get bundle information
+        print(f"[GENERATOR] Step 1: Getting bundle {bundle_id}")
+        bundle = self._get_bundle(bundle_id)
+        if not bundle:
+            raise ValueError(f"Bundle {bundle_id} not found")
+        print(f"[GENERATOR] Found bundle: {bundle['label']}")
+        
+        # 2. Parse RSS feeds
+        print(f"[GENERATOR] Step 2: Parsing {len(bundle['sources'])} RSS feeds")
+        entries = self.rss_service.parse_multiple_feeds(bundle["sources"])
+        print(f"[GENERATOR] Parsed {len(entries)} entries")
+        
+        # 3. Filter and score entries
+        print(f"[GENERATOR] Step 3: Filtering and scoring entries")
+        recent_entries = self.rss_service.filter_recent_entries(entries, days=7)
+        scored_entries = self.rss_service.score_entries(recent_entries, topic)
+        print(f"[GENERATOR] Using {len(scored_entries)} scored entries")
+        
+        # 4. Generate draft using AI
+        print(f"[GENERATOR] Step 4: Generating draft with Openrouter API")
+        generated_html = await self.ai_service.generate_newsletter_draft(
+            entries=scored_entries,
+            tone=tone,
+            topic=topic,
+            bundle_name=bundle["label"]
+        )
+        print(f"[GENERATOR] Draft generated successfully")
+        
+        # 5. Calculate readiness score
+        readiness_score = self._calculate_readiness_score(
+            generated_html,
+            len(scored_entries)
+        )
+        
+        # 6. Extract source links
+        source_links = [entry["link"] for entry in scored_entries[:10] if entry.get("link")]
+        
+        # 7. Create draft object
+        draft = {
+            "id": f"draft-{uuid.uuid4().hex[:12]}",
+            "user_id": user_id,
+            "bundle_id": bundle_id,
+            "bundle_name": bundle["label"],
+            "topic": topic,
+            "tone": tone,
+            "generated_html": generated_html,
+            "edited_html": None,
+            "status": "draft",
+            "readiness_score": readiness_score,
+            "sources": source_links,
+            "created_at": datetime.now(),
+            "updated_at": datetime.now(),
+            "sent_at": None,
+            "scheduled_for": None
+        }
+        
+        # TODO: Save to Supabase database
+        
+        return draft
+    
+    def _get_bundle(self, bundle_id: str) -> Dict:
+        """Get bundle by ID"""
+        return next((b for b in PRESET_BUNDLES if b["id"] == bundle_id), None)
+    
+    def _calculate_readiness_score(self, html_content: str, num_sources: int) -> int:
+        """Calculate how ready the draft is (0-100)"""
+        score = 0
+        
+        # Has content
+        if len(html_content) > 200:
+            score += 40
+        
+        # Has multiple sections
+        if html_content.count("<h") >= 3:
+            score += 20
+        
+        # Has insights
+        if "draft-insight" in html_content or "<h3>" in html_content:
+            score += 20
+        
+        # Has sources
+        if num_sources >= 5:
+            score += 20
+        
+        return min(score, 100)
+
