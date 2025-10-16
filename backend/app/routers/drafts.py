@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Optional
 from datetime import datetime
 from app.models.draft import (
@@ -9,6 +9,7 @@ from app.models.draft import (
 )
 from app.services.draft_generator import DraftGeneratorService
 from app.database import get_db, SupabaseDB
+from app.utils.auth import get_current_user
 import uuid
 
 router = APIRouter()
@@ -16,10 +17,11 @@ draft_service = DraftGeneratorService()
 
 
 @router.post("/generate", response_model=DraftResponse)
-async def generate_draft(request: GenerateDraftRequest, user_id: str = "00000000-0000-0000-0000-000000000001"):
+async def generate_draft(request: GenerateDraftRequest, current_user: dict = Depends(get_current_user)):
     """Generate a new newsletter draft from bundle"""
     try:
-        print(f"[DRAFT] Starting generation for bundle {request.bundle_id}")
+        user_id = current_user["id"]
+        print(f"[DRAFT] Starting generation for user {user_id}, bundle {request.bundle_id}")
         draft = await draft_service.generate_draft(
             user_id=user_id,
             bundle_id=request.bundle_id,
@@ -36,9 +38,10 @@ async def generate_draft(request: GenerateDraftRequest, user_id: str = "00000000
 
 
 @router.get("/", response_model=List[DraftResponse])
-async def get_drafts(user_id: str = "00000000-0000-0000-0000-000000000001", status: Optional[str] = None):
+async def get_drafts(current_user: dict = Depends(get_current_user), status: Optional[str] = None):
     """Get all drafts for a user"""
     try:
+        user_id = current_user["id"]
         db = SupabaseDB.get_service_client()  # Use service role to bypass RLS
         query = db.table("drafts").select("*").eq("user_id", user_id)
         
@@ -53,9 +56,10 @@ async def get_drafts(user_id: str = "00000000-0000-0000-0000-000000000001", stat
 
 
 @router.get("/{draft_id}", response_model=DraftResponse)
-async def get_draft(draft_id: str, user_id: str = "00000000-0000-0000-0000-000000000001"):
+async def get_draft(draft_id: str, current_user: dict = Depends(get_current_user)):
     """Get a specific draft"""
     try:
+        user_id = current_user["id"]
         db = SupabaseDB.get_service_client()  # Use service role to bypass RLS
         response = db.table("drafts").select("*").eq("id", draft_id).eq("user_id", user_id).execute()
         
@@ -71,9 +75,10 @@ async def get_draft(draft_id: str, user_id: str = "00000000-0000-0000-0000-00000
 
 
 @router.patch("/{draft_id}", response_model=DraftResponse)
-async def update_draft(draft_id: str, update: DraftUpdate, user_id: str = "00000000-0000-0000-0000-000000000001"):
+async def update_draft(draft_id: str, update: DraftUpdate, current_user: dict = Depends(get_current_user)):
     """Update a draft (autosave)"""
     try:
+        user_id = current_user["id"]
         db = SupabaseDB.get_service_client()  # Use service role to bypass RLS
         
         # Build update data
@@ -102,9 +107,10 @@ async def update_draft(draft_id: str, update: DraftUpdate, user_id: str = "00000
 
 
 @router.delete("/{draft_id}")
-async def delete_draft(draft_id: str, user_id: str = "00000000-0000-0000-0000-000000000001"):
+async def delete_draft(draft_id: str, current_user: dict = Depends(get_current_user)):
     """Delete a draft"""
     try:
+        user_id = current_user["id"]
         db = SupabaseDB.get_service_client()  # Use service role to bypass RLS
         response = db.table("drafts").delete().eq("id", draft_id).eq("user_id", user_id).execute()
         
@@ -120,9 +126,10 @@ async def delete_draft(draft_id: str, user_id: str = "00000000-0000-0000-0000-00
 
 
 @router.post("/{draft_id}/send")
-async def send_draft(draft_id: str, request: SendDraftRequest, user_id: str = "00000000-0000-0000-0000-000000000001"):
+async def send_draft(draft_id: str, request: SendDraftRequest, current_user: dict = Depends(get_current_user)):
     """Send a draft via email"""
     try:
+        user_id = current_user["id"]
         db = SupabaseDB.get_service_client()  # Use service role to bypass RLS
         
         # Get draft
@@ -184,7 +191,7 @@ async def send_draft(draft_id: str, request: SendDraftRequest, user_id: str = "0
 
 
 @router.post("/{draft_id}/regenerate")
-async def regenerate_section(draft_id: str, section: str = "intro", user_id: str = "00000000-0000-0000-0000-000000000001"):
+async def regenerate_section(draft_id: str, section: str = "intro", current_user: dict = Depends(get_current_user)):
     """Regenerate a specific section of the draft"""
     # For MVP, return mock regenerated content
     # TODO: Implement OpenAI regeneration
@@ -196,15 +203,17 @@ async def regenerate_section(draft_id: str, section: str = "intro", user_id: str
 
 
 @router.post("/{draft_id}/reactions")
-async def save_reaction(draft_id: str, section_id: str = None, reaction: str = "thumbs_up"):
+async def save_reaction(draft_id: str, section_id: str = None, reaction: str = "thumbs_up", current_user: dict = Depends(get_current_user)):
     """Save user feedback reaction"""
     try:
+        user_id = current_user["id"]
         db = SupabaseDB.get_service_client()  # Use service role to bypass RLS
         
         db.table("feedback").insert({
             "draft_id": draft_id,
             "section_id": section_id,
-            "reaction": reaction
+            "reaction": reaction,
+            "user_id": user_id
         }).execute()
         
         return {

@@ -18,8 +18,17 @@ import {
   CheckCircle,
   Eye,
 } from "lucide-react";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 export default function AnalyticsPage() {
+  return (
+    <ProtectedRoute>
+      <AnalyticsContent />
+    </ProtectedRoute>
+  );
+}
+
+function AnalyticsContent() {
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [timeframe, setTimeframe] = useState<"7d" | "30d">("7d");

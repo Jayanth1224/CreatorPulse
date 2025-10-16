@@ -1,9 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, FileEdit, BarChart3, Settings, Bell } from "lucide-react";
+import { LayoutDashboard, FileEdit, BarChart3, Settings, Bell, LogOut, User } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const navItems = [
   {
@@ -30,6 +40,19 @@ const navItems = [
 
 export function Navigation() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/login");
+  };
+
+  const getUserInitials = () => {
+    if (!user?.email) return "U";
+    const email = user.email;
+    return email.substring(0, 2).toUpperCase();
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/60">
@@ -80,9 +103,38 @@ export function Navigation() {
             <button className="p-2 rounded-full hover:bg-background transition-colors">
               <Bell className="h-5 w-5 text-muted" />
             </button>
-            <button className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white font-semibold text-sm">
-              JB
-            </button>
+            
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white font-semibold text-sm hover:opacity-90 transition-opacity">
+                    {getUserInitials()}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col gap-1">
+                      <p className="text-sm font-medium">My Account</p>
+                      <p className="text-xs text-muted truncate">{user.email}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.push("/settings")}>
+                    <User className="h-4 w-4 mr-2" />
+                    Profile Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button onClick={() => router.push("/login")} size="sm">
+                Sign In
+              </Button>
+            )}
           </div>
         </div>
 

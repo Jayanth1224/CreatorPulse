@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
 import "./globals.css";
-import { Navigation } from "@/components/layout/navigation";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -25,7 +25,9 @@ export default function RootLayout({
         className="min-h-screen bg-background text-foreground antialiased"
         suppressHydrationWarning
       >
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

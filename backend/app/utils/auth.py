@@ -57,45 +57,64 @@ async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Security(security)
 ) -> dict:
     """
-    Get current authenticated user from JWT token
+    Get current authenticated user from Supabase JWT token
     
     Args:
         credentials: HTTP Authorization credentials
     
     Returns:
-        User data dict
+        User data dict with at least 'id' and 'email' fields
     
     Raises:
         HTTPException: If token is invalid or user not found
     """
     token = credentials.credentials
     
-    payload = verify_token(token)
+    # Verify Supabase JWT
+    payload = verify_supabase_jwt(token)
     if not payload:
         raise HTTPException(
             status_code=401,
             detail="Invalid or expired token"
         )
     
-    user_id = payload.get("user_id")
+    # Supabase JWT has 'sub' field which is the user ID
+    user_id = payload.get("sub")
+    email = payload.get("email")
+    
     if not user_id:
         raise HTTPException(
             status_code=401,
             detail="Invalid token payload"
         )
     
-    # Fetch user from database
+    # Ensure user exists in our users table (auto-create if needed)
     from app.database import SupabaseDB
-    db = SupabaseDB.get_service_client()  # Use service role to bypass RLS
-    response = db.table("users").select("*").eq("id", user_id).execute()
+    db = SupabaseDB.get_service_client()
     
-    if not response.data:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found"
-        )
+    # Check if user exists
+    existing_user = db.table("users").select("*").eq("id", user_id).execute()
     
-    return response.data[0]
+    if not existing_user.data:
+        # Auto-create user in our users table
+        print(f"[AUTH] Auto-creating user {user_id} ({email}) in users table")
+        try:
+            db.table("users").insert({
+                "id": user_id,
+                "email": email,
+                "name": email.split("@")[0],  # Use email prefix as default name
+                "timezone": "UTC"
+            }).execute()
+        except Exception as e:
+            print(f"[AUTH ERROR] Failed to create user: {str(e)}")
+            # Continue anyway - the user exists in auth.users
+    
+    # Return user data from JWT
+    return {
+        "id": user_id,
+        "email": email,
+        **payload  # Include all JWT claims
+    }
 
 
 def get_optional_bearer():
@@ -136,12 +155,20 @@ def verify_supabase_jwt(token: str) -> Optional[dict]:
         Decoded token payload or None
     """
     try:
-        # Supabase JWTs use the service key as secret
+        # Supabase JWTs are signed with the project's JWT secret
+        # Use settings.secret_key (mapped to Supabase JWT Secret in .env)
+        # Skip audience and other claim validations for maximum compatibility
         payload = jwt.decode(
             token,
-            settings.supabase_service_key,
+            settings.secret_key,
             algorithms=["HS256"],
-            audience="authenticated"
+            options={
+                "verify_signature": True,
+                "verify_exp": True,
+                "verify_nbf": False,
+                "verify_iat": False,
+                "verify_aud": False,  # Skip audience verification
+            }
         )
         return payload
     except Exception as e:

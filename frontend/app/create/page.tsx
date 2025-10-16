@@ -12,8 +12,17 @@ import { getBundles, generateDraft } from "@/lib/api-client";
 import { tonePresets } from "@/lib/mock-data";
 import { Bundle } from "@/types";
 import { Loader2, Sparkles } from "lucide-react";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 export default function CreatePage() {
+  return (
+    <ProtectedRoute>
+      <CreateContent />
+    </ProtectedRoute>
+  );
+}
+
+function CreateContent() {
   const router = useRouter();
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const [selectedBundle, setSelectedBundle] = useState("");

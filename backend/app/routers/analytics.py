@@ -1,15 +1,17 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from app.models.analytics import AnalyticsSummary
 from app.database import get_db, SupabaseDB
+from app.utils.auth import get_current_user
 from typing import Optional
 
 router = APIRouter()
 
 
 @router.get("/", response_model=AnalyticsSummary)
-async def get_analytics(user_id: str = "00000000-0000-0000-0000-000000000001"):
+async def get_analytics(current_user: dict = Depends(get_current_user)):
     """Get analytics summary for user"""
     try:
+        user_id = current_user["id"]
         db = SupabaseDB.get_service_client()  # Use service role to bypass RLS
         
         # Get total drafts

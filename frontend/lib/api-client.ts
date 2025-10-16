@@ -3,6 +3,8 @@
  * Handles all API requests to the backend
  */
 
+import { supabase } from './supabase-client';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 // Types
@@ -17,23 +19,23 @@ export interface ApiResponse<T> {
 }
 
 // Auth helpers
-export function getAuthToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('auth_token');
+export async function getAuthToken(): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ?? null;
 }
 
 export function setAuthToken(token: string) {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem('auth_token', token);
+  // No-op: Supabase manages tokens automatically
+  // Keeping for backward compatibility
 }
 
 export function clearAuthToken() {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem('auth_token');
+  // No-op: Supabase manages tokens automatically
+  // Keeping for backward compatibility
 }
 
-export function getAuthHeaders(): HeadersInit {
-  const token = getAuthToken();
+export async function getAuthHeaders(): Promise<HeadersInit> {
+  const token = await getAuthToken();
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
   };
@@ -52,8 +54,9 @@ async function apiRequest<T>(
 ): Promise<ApiResponse<T>> {
   try {
     const url = `${API_BASE_URL}${endpoint}`;
+    const authHeaders = await getAuthHeaders();
     const headers = {
-      ...getAuthHeaders(),
+      ...authHeaders,
       ...options.headers,
     };
     

@@ -10,10 +10,19 @@ import { getDrafts } from "@/lib/api-client";
 import { formatDateTime } from "@/lib/utils";
 import { Draft } from "@/types";
 import { FileEdit, RefreshCw, Send, Clock, CheckCircle2 } from "lucide-react";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 type TabType = "all" | "sent" | "scheduled" | "bundles";
 
 export default function DashboardPage() {
+  return (
+    <ProtectedRoute>
+      <DashboardContent />
+    </ProtectedRoute>
+  );
+}
+
+function DashboardContent() {
   const [activeTab, setActiveTab] = useState<TabType>("all");
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [loading, setLoading] = useState(true);

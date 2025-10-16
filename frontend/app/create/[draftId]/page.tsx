@@ -20,8 +20,17 @@ import {
   Loader2,
   Check,
 } from "lucide-react";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 export default function EditorPage() {
+  return (
+    <ProtectedRoute>
+      <EditorContent />
+    </ProtectedRoute>
+  );
+}
+
+function EditorContent() {
   const params = useParams();
   const router = useRouter();
   const draftId = params.draftId as string;
