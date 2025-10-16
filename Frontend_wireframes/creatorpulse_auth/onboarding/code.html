@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CreatorPulse - Onboarding</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13a4ec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101c22",
+                        "text-light": "#111827",
+                        "text-dark": "#f3f4f6",
+                        "muted-light": "#6b7280",
+                        "muted-dark": "#9ca3af",
+                        "card-light": "#ffffff",
+                        "card-dark": "#1a2831",
+                        "border-light": "#e5e7eb",
+                        "border-dark": "#374151"
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Manrope', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-text-light dark:text-text-dark">
+<div class="flex flex-col min-h-screen">
+<header class="border-b border-border-light dark:border-border-dark">
+<nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 text-primary">
+<svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M44 11.2727C44 14.0109 39.8386 16.3957 33.69 17.6364C39.8386 18.877 44 21.2618 44 24C44 26.7382 39.8386 29.123 33.69 30.3636C39.8386 31.6043 44 33.9891 44 36.7273C44 40.7439 35.0457 44 24 44C12.9543 44 4 40.7439 4 36.7273C4 33.9891 8.16144 31.6043 14.31 30.3636C8.16144 29.123 4 26.7382 4 24C4 21.2618 8.16144 18.877 14.31 17.6364C8.16144 16.3957 4 14.0109 4 11.2727C4 7.25611 12.9543 4 24 4C35.0457 4 44 7.25611 44 11.2727Z" fill="currentColor"></path>
+</svg>
+</div>
+<h1 class="text-xl font-bold">CreatorPulse</h1>
+</div>
+<button class="px-4 py-2 text-sm font-medium rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors">Sign in</button>
+</nav>
+</header>
+<main class="flex-grow flex items-center justify-center container mx-auto px-6 py-12">
+<div class="w-full max-w-md text-center">
+<div class="bg-card-light dark:bg-card-dark p-8 rounded-xl shadow-lg border border-border-light dark:border-border-dark" id="auth-card">
+<h2 class="text-2xl font-bold mb-2">Get your daily creator digest</h2>
+<p class="text-muted-light dark:text-muted-dark mb-6">Enter your email to receive a magic link.</p>
+<form class="flex flex-col gap-4">
+<input class="w-full px-4 py-3 rounded-lg bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow" placeholder="you@example.com" type="email"/>
+<button class="w-full bg-primary text-white font-bold py-3 px-4 rounded-lg hover:opacity-90 transition-opacity" type="submit">Send magic link</button>
+</form>
+<p class="text-xs text-muted-light dark:text-muted-dark mt-4">Check your inbox — magic link expires in 15 minutes.</p>
+</div>
+<div class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" id="onboarding-modal">
+<div class="bg-card-light dark:bg-card-dark w-full max-w-2xl rounded-xl shadow-2xl border border-border-light dark:border-border-dark p-8 m-4 text-left flex flex-col max-h-[90vh]">
+<h3 class="text-2xl font-bold mb-2">Welcome! Let's set up your digest.</h3>
+<p class="text-muted-light dark:text-muted-dark mb-6">Customize your CreatorPulse experience.</p>
+<div class="flex-grow overflow-y-auto pr-2 -mr-2 space-y-6">
+<div class="space-y-2">
+<label class="font-medium" for="timezone">Timezone</label>
+<select class="w-full px-4 py-3 rounded-lg bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow" id="timezone">
+<option> (UTC-08:00) Pacific Time (US &amp; Canada)</option>
+<option> (UTC-05:00) Eastern Time (US &amp; Canada)</option>
+<option> (UTC+01:00) Central European Time</option>
+</select>
+</div>
+<div class="space-y-2">
+<label class="font-medium">Content Bundles</label>
+<div class="flex flex-wrap gap-2">
+<button class="px-3 py-1.5 text-sm rounded-full border border-border-light dark:border-border-dark bg-transparent hover:bg-primary/10 data-[selected=true]:bg-primary data-[selected=true]:text-white data-[selected=true]:border-primary transition-colors">AI &amp; ML</button>
+<button class="px-3 py-1.5 text-sm rounded-full border border-border-light dark:border-border-dark bg-transparent hover:bg-primary/10 data-[selected=true]:bg-primary data-[selected=true]:text-white data-[selected=true]:border-primary transition-colors">Creator Tools</button>
+<button class="px-3 py-1.5 text-sm rounded-full border border-border-light dark:border-border-dark bg-transparent hover:bg-primary/10 data-[selected=true]:bg-primary data-[selected=true]:text-white data-[selected=true]:border-primary transition-colors">Startups</button>
+</div>
+</div>
+<div class="space-y-2">
+<label class="font-medium">Digest Tone</label>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<label class="p-4 rounded-lg border border-border-light dark:border-border-dark cursor-pointer has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary transition-all">
+<input class="sr-only" name="tone" type="radio" value="professional"/>
+<span class="font-bold text-sm">Professional</span>
+<p class="text-xs text-muted-light dark:text-muted-dark mt-1">"The latest funding round for Acme Inc. reached $50M..."</p>
+</label>
+<label class="p-4 rounded-lg border border-border-light dark:border-border-dark cursor-pointer has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary transition-all">
+<input checked="" class="sr-only" name="tone" type="radio" value="casual"/>
+<span class="font-bold text-sm">Casual</span>
+<p class="text-xs text-muted-light dark:text-muted-dark mt-1">"Guess who just got a massive $50M? That's right, Acme Inc..."</p>
+</label>
+<label class="p-4 rounded-lg border border-border-light dark:border-border-dark cursor-pointer has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary transition-all">
+<input class="sr-only" name="tone" type="radio" value="storyteller"/>
+<span class="font-bold text-sm">Storyteller</span>
+<p class="text-xs text-muted-light dark:text-muted-dark mt-1">"In a world of startups, Acme Inc. just wrote a new chapter..."</p>
+</label>
+<label class="p-4 rounded-lg border border-border-light dark:border-border-dark cursor-pointer has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary transition-all">
+<input class="sr-only" name="tone" type="radio" value="analytical"/>
+<span class="font-bold text-sm">Analytical</span>
+<p class="text-xs text-muted-light dark:text-muted-dark mt-1">"Acme Inc.'s recent $50M funding round signifies a 25% YOY..."</p>
+</label>
+</div>
+</div>
+<div class="space-y-2" x-data="{ open: false }">
+<button @click="open = !open" class="flex items-center gap-2 font-medium text-primary hover:underline">
+<span>Upload Past Posts (Optional)</span>
+<svg :class="{ 'rotate-180': open }" class="w-5 h-5 transition-transform" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" fill-rule="evenodd"></path>
+</svg>
+</button>
+<div class="border-t border-border-light dark:border-border-dark pt-4" x-show="open" x-transition="">
+<button class="w-full text-center py-6 border-2 border-dashed border-border-light dark:border-border-dark rounded-lg hover:bg-background-light dark:hover:bg-background-dark transition-colors">
+<span class="font-medium">Upload 20+ posts (CSV or paste)</span>
+</button>
+</div>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t border-border-light dark:border-border-dark flex items-center justify-between">
+<button class="text-sm font-medium text-muted-light dark:text-muted-dark hover:text-text-light dark:hover:text-text-dark transition-colors">Skip for now</button>
+<button class="bg-primary text-white font-bold py-2 px-6 rounded-lg hover:opacity-90 transition-opacity">Finish setup</button>
+</div>
+</div>
+</div>
+<div class="hidden fixed bottom-5 right-5 bg-card-light dark:bg-card-dark p-5 rounded-xl shadow-lg border border-border-light dark:border-border-dark flex items-center gap-4 max-w-md" id="success-toast">
+<div class="w-10 h-10 bg-primary/20 text-primary rounded-full flex items-center justify-center flex-shrink-0">
+<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" fill-rule="evenodd"></path>
+</svg>
+</div>
+<div class="flex-grow">
+<p class="font-bold">Welcome! Your first digest arrives tomorrow at 08:00 local.</p>
+<button class="font-bold text-sm text-primary hover:underline mt-1">Go to Dashboard</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+<script defer="" src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script>
+      document.addEventListener('DOMContentLoaded', () => {
+        // Simple toggle for bundles
+        document.querySelectorAll('#onboarding-modal button[data-selected]').forEach(button => {
+            button.addEventListener('click', () => {
+                const isSelected = button.getAttribute('data-selected') === 'true';
+                button.setAttribute('data-selected', !isSelected);
+            })
+        })
+        // Dev controls
+        const authCard = document.getElementById('auth-card');
+        const onboardingModal = document.getElementById('onboarding-modal');
+        const successToast = document.getElementById('success-toast');
+        const showOnboarding = () => {
+            authCard.classList.add('hidden');
+            onboardingModal.classList.remove('hidden');
+            successToast.classList.add('hidden');
+        }
+        const showSuccess = () => {
+            authCard.classList.remove('hidden');
+            onboardingModal.classList.add('hidden');
+            successToast.classList.remove('hidden');
+            setTimeout(() => successToast.classList.add('hidden'), 5000);
+        }
+        const showAuth = () => {
+            authCard.classList.remove('hidden');
+            onboardingModal.classList.add('hidden');
+            successToast.classList.add('hidden');
+        }
+        document.querySelector('#auth-card form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            showOnboarding();
+        });
+        document.querySelector('#onboarding-modal button.bg-primary').addEventListener('click', (e) => {
+            e.preventDefault();
+            showSuccess();
+        });
+        document.querySelector('#onboarding-modal button.text-muted-light').addEventListener('click', (e) => {
+            e.preventDefault();
+            showSuccess();
+        });
+        document.querySelector('#success-toast button').addEventListener('click', showAuth);
+        // Dark mode toggle for development
+        const htmlEl = document.documentElement;
+        const toggle = document.createElement('button');
+        toggle.innerText = 'Toggle Dark Mode';
+        toggle.className = 'fixed top-5 right-5 bg-primary text-white p-2 rounded-lg text-xs';
+        toggle.onclick = () => htmlEl.classList.toggle('dark');
+        document.body.appendChild(toggle);
+      });
+    </script>
+
+</body></html>

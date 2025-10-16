@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CreatorPulse Analytics</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#13a4ec",
+              "background-light": "#f6f7f8",
+              "background-dark": "#101c22",
+              "foreground-light": "#111827",
+              "foreground-dark": "#f9fafb",
+              "card-light": "#ffffff",
+              "card-dark": "#1f2937",
+              "border-light": "#e5e7eb",
+              "border-dark": "#374151",
+              "muted-light": "#6b7280",
+              "muted-dark": "#9ca3af",
+              "success-light": "#10b981",
+              "success-dark": "#34d399",
+              "danger-light": "#ef4444",
+              "danger-dark": "#f87171",
+            },
+            fontFamily: {
+              display: ["Manrope", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "0.5rem",
+              lg: "0.75rem",
+              xl: "1rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+      }
+    </style>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-foreground-light dark:text-foreground-dark">
+<div class="flex min-h-screen w-full flex-col">
+<header class="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between border-b border-border-light bg-card-light px-4 dark:border-border-dark dark:bg-card-dark md:px-6">
+<div class="flex h-full items-center gap-6">
+<a class="flex items-center gap-2 text-primary" href="#">
+<svg class="h-8 w-8" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M44 11.2727C44 14.0109 39.8386 16.3957 33.69 17.6364C39.8386 18.877 44 21.2618 44 24C44 26.7382 39.8386 29.123 33.69 30.3636C39.8386 31.6043 44 33.9891 44 36.7273C44 40.7439 35.0457 44 24 44C12.9543 44 4 40.7439 4 36.7273C4 33.9891 8.16144 31.6043 14.31 30.3636C8.16144 29.123 4 26.7382 4 24C4 21.2618 8.16144 18.877 14.31 17.6364C8.16144 16.3957 4 14.0109 4 11.2727C4 7.25611 12.9543 4 24 4C35.0457 4 44 7.25611 44 11.2727Z" fill="currentColor"></path>
+</svg>
+<span class="text-xl font-bold">CreatorPulse</span>
+</a>
+<nav class="hidden h-full items-center gap-4 text-sm font-medium lg:flex">
+<a class="flex h-full items-center border-b-2 border-transparent px-2 text-muted-light transition-colors hover:border-primary/50 hover:text-foreground-light dark:text-muted-dark dark:hover:border-primary/50 dark:hover:text-foreground-dark" href="#">Dashboard</a>
+<a class="flex h-full items-center border-b-2 border-transparent px-2 text-muted-light transition-colors hover:border-primary/50 hover:text-foreground-light dark:text-muted-dark dark:hover:border-primary/50 dark:hover:text-foreground-dark" href="#">Create</a>
+<a class="flex h-full items-center border-b-2 border-primary px-2 font-bold text-primary" href="#">Analytics</a>
+<a class="flex h-full items-center border-b-2 border-transparent px-2 text-muted-light transition-colors hover:border-primary/50 hover:text-foreground-light dark:text-muted-dark dark:hover:border-primary/50 dark:hover:text-foreground-dark" href="#">Settings</a>
+</nav>
+</div>
+<div class="flex items-center gap-2">
+<button class="flex h-10 w-10 items-center justify-center rounded-full text-muted-light transition-colors hover:bg-background-light hover:text-foreground-light dark:text-muted-dark dark:hover:bg-background-dark dark:hover:text-foreground-dark">
+<span class="material-symbols-outlined">notifications</span>
+<span class="sr-only">Notifications</span>
+</button>
+<button class="h-10 w-10 overflow-hidden rounded-full">
+<div class="h-full w-full bg-cover bg-center" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB4lh7_U5bAEkI5MQKnCF531ICvFyfDnsTe8yPxI_SCBO4_gHJT4-QSYCktcqMxO2iPBp0IoPpZ-RW4vjdoyHLb8xv4FLea-32l2nN5olkrLkDfL21vFK2MKDGRC4rf_HQB00Xn98ZbB_3d2olbzGwj2V0ljBYThI0Mgs5LFxn1Qo2PHFDdtqB7daSqbrJzT3tVFt5wd3NFqAOr4ehS3ue7oBwQ0xpIfqHEiRZWxU-5LGTS-Sz5wrC5ntQDgY7sgCH9MJlBwwTQ");'></div>
+<span class="sr-only">User menu</span>
+</button>
+</div>
+</header>
+<main class="flex-1 p-4 md:p-8 lg:p-12">
+<div class="mx-auto max-w-7xl">
+<div class="mb-8 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+<h2 class="text-3xl font-bold tracking-tight">Analytics</h2>
+</div>
+<div class="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+<div class="rounded-lg border border-border-light bg-card-light p-6 shadow-sm dark:border-border-dark dark:bg-card-dark">
+<h3 class="text-sm font-medium text-muted-light dark:text-muted-dark">Open rate (last 7 days)</h3>
+<p class="mt-2 text-3xl font-bold">23%</p>
+<div class="mt-1 flex items-center gap-1 text-sm text-success-light dark:text-success-dark">
+<span class="material-symbols-outlined text-base"> trending_up </span>
+<span>+2%</span>
+</div>
+</div>
+<div class="rounded-lg border border-border-light bg-card-light p-6 shadow-sm dark:border-border-dark dark:bg-card-dark">
+<h3 class="text-sm font-medium text-muted-light dark:text-muted-dark">CTR</h3>
+<p class="mt-2 text-3xl font-bold">4.5%</p>
+<div class="mt-1 flex items-center gap-1 text-sm text-danger-light dark:text-danger-dark">
+<span class="material-symbols-outlined text-base"> trending_down </span>
+<span>-0.5%</span>
+</div>
+</div>
+<div class="rounded-lg border border-border-light bg-card-light p-6 shadow-sm dark:border-border-dark dark:bg-card-dark">
+<h3 class="text-sm font-medium text-muted-light dark:text-muted-dark">Avg. review time</h3>
+<p class="mt-2 text-3xl font-bold">3 min</p>
+<div class="mt-1 flex items-center gap-1 text-sm text-danger-light dark:text-danger-dark">
+<span class="material-symbols-outlined text-base"> trending_down </span>
+<span>-1 min</span>
+</div>
+</div>
+<div class="rounded-lg border border-border-light bg-card-light p-6 shadow-sm dark:border-border-dark dark:bg-card-dark">
+<h3 class="text-sm font-medium text-muted-light dark:text-muted-dark">Draft acceptance rate</h3>
+<p class="mt-2 text-3xl font-bold">95%</p>
+<div class="mt-1 flex items-center gap-1 text-sm text-success-light dark:text-success-dark">
+<span class="material-symbols-outlined text-base"> trending_up </span>
+<span>+5%</span>
+</div>
+</div>
+</div>
+<div class="mb-8 grid gap-8 lg:grid-cols-2">
+<div class="rounded-lg border border-border-light bg-card-light p-6 shadow-sm dark:border-border-dark dark:bg-card-dark">
+<h3 class="font-medium text-muted-light dark:text-muted-dark">Open rate over last 30 days</h3>
+<div class="mt-4 h-64">
+<svg fill="none" height="100%" preserveAspectRatio="xMidYMid meet" viewBox="0 0 472 150" width="100%" xmlns="http://www.w3.org/2000/svg">
+<path class="text-primary/10 dark:text-primary/20" d="M0 109C18.1538 109 18.1538 21 36.3077 21C54.4615 21 54.4615 41 72.6154 41C90.7692 41 90.7692 93 108.923 93C127.077 93 127.077 33 145.231 33C163.385 33 163.385 101 181.538 101C199.692 101 199.692 61 217.846 61C236 61 236 45 254.154 45C272.308 45 272.308 121 290.462 121C308.615 121 308.615 149 326.769 149C344.923 149 344.923 1 363.077 1C381.231 1 381.231 81 399.385 81C417.538 81 417.538 129 435.692 129C453.846 129 453.846 25 472 25V150H0V109Z" fill="url(#paint0_linear_1)"></path>
+<path class="text-primary" d="M0 109C18.1538 109 18.1538 21 36.3077 21C54.4615 21 54.4615 41 72.6154 41C90.7692 41 90.7692 93 108.923 93C127.077 93 127.077 33 145.231 33C163.385 33 163.385 101 181.538 101C199.692 101 199.692 61 217.846 61C236 61 236 45 254.154 45C272.308 45 272.308 121 290.462 121C308.615 121 308.615 149 326.769 149C344.923 149 344.923 1 363.077 1C381.231 1 381.231 81 399.385 81C417.538 81 417.538 129 435.692 129C453.846 129 453.846 25 472 25" stroke="currentColor" stroke-linecap="round" stroke-width="3"></path>
+<defs>
+<linearGradient gradientUnits="userSpaceOnUse" id="paint0_linear_1" x1="236" x2="236" y1="1" y2="149">
+<stop stop-color="currentColor" stop-opacity="1"></stop>
+<stop offset="1" stop-color="currentColor" stop-opacity="0"></stop>
+</linearGradient>
+</defs>
+</svg>
+</div>
+</div>
+<div class="rounded-lg border border-border-light bg-card-light p-6 shadow-sm dark:border-border-dark dark:bg-card-dark">
+<h3 class="font-medium text-muted-light dark:text-muted-dark">CTR over time</h3>
+<div class="mt-4 h-64">
+<svg fill="none" height="100%" preserveAspectRatio="xMidYMid meet" viewBox="0 0 472 150" width="100%" xmlns="http://www.w3.org/2000/svg">
+<path class="text-primary/10 dark:text-primary/20" d="M0 109C18.1538 109 18.1538 21 36.3077 21C54.4615 21 54.4615 41 72.6154 41C90.7692 41 90.7692 93 108.923 93C127.077 93 127.077 33 145.231 33C163.385 33 163.385 101 181.538 101C199.692 101 199.692 61 217.846 61C236 61 236 45 254.154 45C272.308 45 272.308 121 290.462 121C308.615 121 308.615 149 326.769 149C344.923 149 344.923 1 363.077 1C381.231 1 381.231 81 399.385 81C417.538 81 417.538 129 435.692 129C453.846 129 453.846 25 472 25V150H0V109Z" fill="url(#paint1_linear_1)"></path>
+<path class="text-primary" d="M0 109C18.1538 109 18.1538 21 36.3077 21C54.4615 21 54.4615 41 72.6154 41C90.7692 41 90.7692 93 108.923 93C127.077 93 127.077 33 145.231 33C163.385 33 163.385 101 181.538 101C199.692 101 199.692 61 217.846 61C236 61 236 45 254.154 45C272.308 45 272.308 121 290.462 121C308.615 121 308.615 149 326.769 149C344.923 149 344.923 1 363.077 1C381.231 1 381.231 81 399.385 81C417.538 81 417.538 129 435.692 129C453.846 129 453.846 25 472 25" stroke="currentColor" stroke-linecap="round" stroke-width="3"></path>
+<defs>
+<linearGradient gradientUnits="userSpaceOnUse" id="paint1_linear_1" x1="236" x2="236" y1="1" y2="149">
+<stop stop-color="currentColor" stop-opacity="1"></stop>
+<stop offset="1" stop-color="currentColor" stop-opacity="0"></stop>
+</linearGradient>
+</defs>
+</svg>
+</div>
+</div>
+</div>
+<div>
+<h2 class="mb-4 text-2xl font-bold tracking-tight">Per-Draft Performance</h2>
+<div class="overflow-x-auto rounded-lg border border-border-light bg-card-light shadow-sm dark:border-border-dark dark:bg-card-dark">
+<table class="w-full text-left">
+<thead class="border-b border-border-light dark:border-border-dark">
+<tr>
+<th class="p-4 text-sm font-medium text-muted-light dark:text-muted-dark">Date</th>
+<th class="p-4 text-sm font-medium text-muted-light dark:text-muted-dark">Subject</th>
+<th class="p-4 text-sm font-medium text-muted-light dark:text-muted-dark">Sent?</th>
+<th class="p-4 text-sm font-medium text-muted-light dark:text-muted-dark">Opens</th>
+<th class="p-4 text-sm font-medium text-muted-light dark:text-muted-dark">CTR</th>
+<th class="p-4 text-sm font-medium text-muted-light dark:text-muted-dark">Time to accept</th>
+<th class="p-4 text-sm font-medium text-muted-light dark:text-muted-dark">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-light dark:divide-border-dark">
+<tr class="hover:bg-background-light dark:hover:bg-background-dark/50">
+<td class="p-4 text-sm">2024-01-15</td>
+<td class="p-4 text-sm font-medium">Weekly Tech Roundup</td>
+<td class="p-4 text-sm">Yes</td>
+<td class="p-4 text-sm">1200</td>
+<td class="p-4 text-sm">4.2%</td>
+<td class="p-4 text-sm">2 min</td>
+<td class="p-4 text-sm">
+<a class="font-medium text-primary hover:underline" href="#">View Draft</a>
+</td>
+</tr>
+<tr class="hover:bg-background-light dark:hover:bg-background-dark/50">
+<td class="p-4 text-sm">2024-01-08</td>
+<td class="p-4 text-sm font-medium">Marketing Trends</td>
+<td class="p-4 text-sm">Yes</td>
+<td class="p-4 text-sm">1500</td>
+<td class="p-4 text-sm">5.1%</td>
+<td class="p-4 text-sm">3 min</td>
+<td class="p-4 text-sm">
+<a class="font-medium text-primary hover:underline" href="#">View Draft</a>
+</td>
+</tr>
+<tr class="hover:bg-background-light dark:hover:bg-background-dark/50">
+<td class="p-4 text-sm">2023-12-22</td>
+<td class="p-4 text-sm font-medium">Holiday Special</td>
+<td class="p-4 text-sm">Yes</td>
+<td class="p-4 text-sm">1800</td>
+<td class="p-4 text-sm">6.3%</td>
+<td class="p-4 text-sm">1 min</td>
+<td class="p-4 text-sm">
+<a class="font-medium text-primary hover:underline" href="#">View Draft</a>
+</td>
+</tr>
+<tr class="hover:bg-background-light dark:hover:bg-background-dark/50">
+<td class="p-4 text-sm">2023-12-15</td>
+<td class="p-4 text-sm font-medium">Year in Review</td>
+<td class="p-4 text-sm">Yes</td>
+<td class="p-4 text-sm">2000</td>
+<td class="p-4 text-sm">7.5%</td>
+<td class="p-4 text-sm">4 min</td>
+<td class="p-4 text-sm">
+<a class="font-medium text-primary hover:underline" href="#">View Draft</a>
+</td>
+</tr>
+<tr class="hover:bg-background-light dark:hover:bg-background-dark/50">
+<td class="p-4 text-sm">2023-12-08</td>
+<td class="p-4 text-sm font-medium">Future of Work</td>
+<td class="p-4 text-sm">Yes</td>
+<td class="p-4 text-sm">1600</td>
+<td class="p-4 text-sm">5.8%</td>
+<td class="p-4 text-sm">2 min</td>
+<td class="p-4 text-sm">
+<a class="font-medium text-primary hover:underline" href="#">View Draft</a>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>

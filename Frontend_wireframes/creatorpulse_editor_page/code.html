@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<title>CreatorPulse Editor</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#13a4ec",
+            "background-light": "#f6f7f8",
+            "background-dark": "#101c22",
+          },
+          fontFamily: {
+            "display": ["Manrope"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings:
+      'FILL' 0,
+      'wght' 400,
+      'GRAD' 0,
+      'opsz' 24
+    }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200">
+<div class="flex flex-col min-h-screen">
+<header class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-3 sticky top-0 bg-background-light dark:bg-background-dark z-10">
+<div class="flex items-center gap-4">
+<a class="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">arrow_back</span>
+</a>
+<input class="text-lg font-bold bg-transparent border-none focus:ring-0 p-0 text-slate-900 dark:text-white w-full max-w-md" type="text" value="August Newsletter - AI Insights"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors">
+<span class="material-symbols-outlined">save</span>
+</button>
+<button class="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors">
+<span class="material-symbols-outlined">history</span>
+</button>
+<a class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors px-3" href="#">Revert</a>
+<button class="bg-primary text-white font-bold text-sm px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">
+          Send
+        </button>
+</div>
+</header>
+<main class="flex-grow grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+<div class="lg:col-span-2 flex flex-col gap-6">
+<div class="bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+<div class="flex justify-between items-center text-sm text-slate-500 dark:text-slate-400">
+<span>Date: July 26, 2024</span>
+<span>Bundle: AI Trends</span>
+<span>Tone: Professional</span>
+</div>
+</div>
+<div class="bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-xl">
+<div class="p-4 flex justify-between items-center border-b border-slate-200 dark:border-slate-800">
+<h3 class="font-bold text-slate-800 dark:text-slate-200">Insight 1</h3>
+<div class="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+<button class="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"><span class="material-symbols-outlined text-base">thumb_up</span></button>
+<button class="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"><span class="material-symbols-outlined text-base">thumb_down</span></button>
+<button class="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"><span class="material-symbols-outlined text-base">sync</span></button>
+<button class="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"><span class="material-symbols-outlined text-base">source</span></button>
+</div>
+</div>
+<div class="p-4 prose prose-slate dark:prose-invert max-w-none prose-p:my-2 prose-headings:my-3">
+<p>The rise of AI-powered content creation tools is transforming the landscape for creators. These tools automate tasks like video editing, content scheduling, and audience engagement, freeing up creators to focus on their core craft. <span class="bg-yellow-200/50 dark:bg-yellow-500/30">However, it's crucial to maintain a human touch to ensure authenticity and connection with your audience.</span></p>
+</div>
+</div>
+<div class="bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-xl">
+<div class="p-4 flex justify-between items-center border-b border-slate-200 dark:border-slate-800">
+<h3 class="font-bold text-slate-800 dark:text-slate-200">Insight 2</h3>
+<div class="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+<button class="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"><span class="material-symbols-outlined text-base">thumb_up</span></button>
+<button class="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"><span class="material-symbols-outlined text-base">thumb_down</span></button>
+<button class="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"><span class="material-symbols-outlined text-base">sync</span></button>
+<button class="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"><span class="material-symbols-outlined text-base">source</span></button>
+</div>
+</div>
+<div class="p-4 prose prose-slate dark:prose-invert max-w-none prose-p:my-2">
+<p>Personalization is key in today's digital world. AI algorithms analyze audience data to tailor content recommendations, ensuring that viewers see what resonates most with them. This leads to higher engagement rates and stronger audience loyalty. Creators should leverage these insights to refine their content strategy and cater to specific audience segments.</p>
+</div>
+</div>
+<div class="bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-xl">
+<div class="p-4 flex justify-between items-center border-b border-slate-200 dark:border-slate-800">
+<h3 class="font-bold text-slate-800 dark:text-slate-200">Insight 3</h3>
+<div class="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+<button class="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"><span class="material-symbols-outlined text-base">thumb_up</span></button>
+<button class="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"><span class="material-symbols-outlined text-base">thumb_down</span></button>
+<button class="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"><span class="material-symbols-outlined text-base">sync</span></button>
+<button class="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"><span class="material-symbols-outlined text-base">source</span></button>
+</div>
+</div>
+<div class="p-4 prose prose-slate dark:prose-invert max-w-none prose-p:my-2">
+<p>The ethical implications of AI in content creation are becoming increasingly important. Issues like deepfakes, copyright infringement, and algorithmic bias need careful consideration. Creators must use AI responsibly, ensuring transparency and respecting intellectual property rights. Building trust with your audience is paramount in this evolving landscape.</p>
+</div>
+</div>
+<div class="text-center text-sm text-slate-500 dark:text-slate-400 py-4 sticky bottom-0">
+          Autosaved
+        </div>
+</div>
+<div class="lg:col-span-1 flex flex-col gap-6">
+<div class="bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+<h3 class="font-bold text-slate-800 dark:text-slate-200 mb-3">Source Bundle</h3>
+<div class="space-y-3">
+<div class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+<div class="flex justify-between items-start">
+<div>
+<p class="font-medium text-slate-800 dark:text-slate-200">TechCrunch</p>
+<p class="text-sm text-slate-600 dark:text-slate-400">AI is revolutionizing content creation...</p>
+</div>
+<a class="text-sm font-medium text-primary hover:underline whitespace-nowrap" href="#">Open original</a>
+</div>
+</div>
+<div class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+<div class="flex justify-between items-start">
+<div>
+<p class="font-medium text-slate-800 dark:text-slate-200">The Verge</p>
+<p class="text-sm text-slate-600 dark:text-slate-400">Creators must navigate the ethical considerations...</p>
+</div>
+<a class="text-sm font-medium text-primary hover:underline whitespace-nowrap" href="#">Open original</a>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+<h3 class="font-bold text-slate-800 dark:text-slate-200 mb-3">Topic Tagging</h3>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 text-sm bg-primary/10 text-primary-darker dark:bg-primary/20 dark:text-primary/90 rounded-full font-medium">AI</span>
+<span class="px-3 py-1 text-sm bg-primary/10 text-primary-darker dark:bg-primary/20 dark:text-primary/90 rounded-full font-medium">Research</span>
+<span class="px-3 py-1 text-sm bg-primary/10 text-primary-darker dark:bg-primary/20 dark:text-primary/90 rounded-full font-medium">LLM</span>
+</div>
+</div>
+<div class="bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+<h3 class="font-bold text-slate-800 dark:text-slate-200 mb-3">Tone Controls</h3>
+<div class="space-y-3">
+<select class="w-full bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg focus:ring-primary focus:border-primary text-slate-800 dark:text-slate-200">
+<option>Professional</option>
+<option>Casual</option>
+<option>Witty</option>
+</select>
+<button class="w-full bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-sm px-4 py-2 rounded-lg transition-colors">
+              Regenerate entire draft
+            </button>
+</div>
+</div>
+<div class="bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+<h3 class="font-bold text-slate-800 dark:text-slate-200 mb-3">Quick Actions</h3>
+<div class="flex gap-3">
+<button class="flex-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-sm px-4 py-2 rounded-lg transition-colors">
+              Add Note
+            </button>
+<button class="flex-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-sm px-4 py-2 rounded-lg transition-colors">
+              Pin Insight
+            </button>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>

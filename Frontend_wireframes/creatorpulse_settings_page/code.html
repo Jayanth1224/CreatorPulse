@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CreatorPulse - Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13a4ec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101c22",
+                        "foreground-light": "#111618",
+                        "foreground-dark": "#f6f7f8",
+                        "subtle-light": "#617c89",
+                        "subtle-dark": "#a0b1b9",
+                        "border-light": "#dbe2e6",
+                        "border-dark": "#2a3b43",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.75rem",
+                        "xl": "1rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-foreground-light dark:text-foreground-dark">
+<div class="flex flex-col min-h-screen">
+<header class="sticky top-0 z-10 flex items-center justify-between whitespace-nowrap border-b border-border-light dark:border-border-dark bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm px-4 md:px-6 py-2">
+<div class="flex items-center gap-6">
+<a class="flex items-center gap-3 shrink-0" href="#">
+<div class="w-8 h-8 text-primary">
+<svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path d="M44 11.2727C44 14.0109 39.8386 16.3957 33.69 17.6364C39.8386 18.877 44 21.2618 44 24C44 26.7382 39.8386 29.123 33.69 30.3636C39.8386 31.6043 44 33.9891 44 36.7273C44 40.7439 35.0457 44 24 44C12.9543 44 4 40.7439 4 36.7273C4 33.9891 8.16144 31.6043 14.31 30.3636C8.16144 29.123 4 26.7382 4 24C4 21.2618 8.16144 18.877 14.31 17.6364C8.16144 16.3957 4 14.0109 4 11.2727C4 7.25611 12.9543 4 24 4C35.0457 4 44 7.25611 44 11.2727Z" fill="currentColor"></path></svg>
+</div>
+<h1 class="text-xl font-bold hidden md:block">CreatorPulse</h1>
+</a>
+<nav class="hidden md:flex items-center gap-2">
+<a class="px-3 py-2 text-sm font-medium text-subtle-light dark:text-subtle-dark hover:text-foreground-light dark:hover:text-foreground-dark transition-colors rounded-md" href="#">Dashboard</a>
+<a class="px-3 py-2 text-sm font-medium text-subtle-light dark:text-subtle-dark hover:text-foreground-light dark:hover:text-foreground-dark transition-colors rounded-md" href="#">Create</a>
+<a class="px-3 py-2 text-sm font-medium text-subtle-light dark:text-subtle-dark hover:text-foreground-light dark:hover:text-foreground-dark transition-colors rounded-md" href="#">Analytics</a>
+<a class="px-3 py-2 text-sm font-bold text-foreground-light dark:text-foreground-dark relative" href="#">
+                    Settings
+                    <span class="absolute bottom-0 left-3 right-3 h-0.5 bg-primary rounded-full"></span>
+</a>
+</nav>
+</div>
+<div class="flex items-center gap-2 md:gap-4">
+<button class="p-2 rounded-full hover:bg-primary/10 dark:hover:bg-primary/20 text-subtle-light dark:text-subtle-dark hover:text-foreground-light dark:hover:text-foreground-dark transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-9 h-9 md:w-10 md:h-10 bg-center bg-no-repeat bg-cover rounded-full ring-2 ring-offset-2 ring-offset-background-light dark:ring-offset-background-dark ring-transparent hover:ring-primary/50 transition-all" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAFzIbRGbxNEhuIFoP0qbk9Q01KBLa9IkicmPHJPqeP5bKVmadeYJLyrdQ65JJkLX5Z8Ay714QpjZQhKVqRDfG4Y4sAWtdbwaxuqbBkZCrqnSIRXmkw_gfOZv0otPxygGdVuyeVFeK3z6xOah-Cr4cSB7qSWMwHLPFZN-CgYc8W9SMmBwT7EvPvB96IbTn3_uQBFCosG3u5e2VoYqx7nf7yxAmP0HDT1kF8N4y3nEAwg2HCQb-euu-oUOS8PRUUHqy8BAFogawJ");'></button>
+<button class="md:hidden p-2 rounded-full hover:bg-primary/10 dark:hover:bg-primary/20 text-subtle-light dark:text-subtle-dark hover:text-foreground-light dark:hover:text-foreground-dark transition-colors">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+</header>
+<main class="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+<div class="flex items-center justify-between mb-8">
+<h2 class="text-3xl md:text-4xl font-extrabold tracking-tight">Settings</h2>
+<button class="bg-primary text-white font-bold py-2 px-4 rounded-lg text-sm shadow-sm hover:opacity-90 transition-opacity">
+                    Save changes
+                </button>
+</div>
+<div class="space-y-12">
+<section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<div class="md:col-span-1">
+<h3 class="text-xl font-bold">Account</h3>
+<p class="text-sm text-subtle-light dark:text-subtle-dark mt-1">Update your account information.</p>
+</div>
+<div class="md:col-span-2 bg-white dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg shadow-sm">
+<div class="p-6 space-y-6">
+<div>
+<label class="block text-sm font-medium mb-1" for="name">Name</label>
+<input class="w-full bg-background-light dark:bg-background-dark border-border-light dark:border-border-dark rounded-lg focus:ring-primary focus:border-primary" id="name" type="text" value="Alex Doe"/>
+</div>
+<div>
+<label class="block text-sm font-medium mb-1" for="email">Email</label>
+<input class="w-full bg-background-light/50 dark:bg-background-dark/50 border-border-light dark:border-border-dark rounded-lg" id="email" readonly="" type="email" value="alex.doe@creatorpulse.com"/>
+</div>
+<div>
+<label class="block text-sm font-medium mb-1" for="timezone">Timezone</label>
+<select class="w-full bg-background-light dark:bg-background-dark border-border-light dark:border-border-dark rounded-lg focus:ring-primary focus:border-primary" id="timezone">
+<option>(GMT-08:00) Pacific Time</option>
+<option>(GMT-05:00) Eastern Time</option>
+</select>
+</div>
+</div>
+<div class="px-6 py-4 bg-background-light/50 dark:bg-background-dark/50 border-t border-border-light dark:border-border-dark rounded-b-lg text-right">
+<button class="font-medium text-primary hover:text-primary/80 text-sm">Edit profile</button>
+</div>
+</div>
+</section>
+<section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<div class="md:col-span-1">
+<h3 class="text-xl font-bold">ESP Connections</h3>
+<p class="text-sm text-subtle-light dark:text-subtle-dark mt-1">Connect your Email Service Provider.</p>
+</div>
+<div class="md:col-span-2 bg-white dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg shadow-sm divide-y divide-border-light dark:divide-border-dark">
+<div class="p-6 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 flex items-center justify-center rounded-lg bg-primary/10">
+<span class="material-symbols-outlined text-primary">cloud_done</span>
+</div>
+<div>
+<p class="font-semibold">SendGrid</p>
+<p class="text-sm text-subtle-light dark:text-subtle-dark">Connected</p>
+</div>
+</div>
+<button class="bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary font-bold py-2 px-4 rounded-lg text-sm hover:bg-primary/20 dark:hover:bg-primary/30 transition-colors">Verify send</button>
+</div>
+<div class="p-6">
+<button class="w-full bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary font-bold py-2.5 px-4 rounded-lg text-sm hover:bg-primary/20 dark:hover:bg-primary/30 transition-colors">
+                                Connect another ESP
+                            </button>
+</div>
+</div>
+</section>
+<section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<div class="md:col-span-1">
+<h3 class="text-xl font-bold">Default Recipient List</h3>
+<p class="text-sm text-subtle-light dark:text-subtle-dark mt-1">The default list for new newsletters.</p>
+</div>
+<div class="md:col-span-2 bg-white dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg shadow-sm p-6">
+<div>
+<label class="block text-sm font-medium mb-1" for="recipient-list">Selected List</label>
+<input class="w-full bg-background-light dark:bg-background-dark border-border-light dark:border-border-dark rounded-lg focus:ring-primary focus:border-primary" id="recipient-list" type="text" value="Weekly Subscribers"/>
+<p class="text-xs text-subtle-light dark:text-subtle-dark mt-2">Change or sync recipient lists via your ESP settings.</p>
+</div>
+</div>
+</section>
+<section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<div class="md:col-span-1">
+<h3 class="text-xl font-bold">Tone &amp; Voice</h3>
+<p class="text-sm text-subtle-light dark:text-subtle-dark mt-1">Customize the personality of your AI.</p>
+</div>
+<div class="md:col-span-2 bg-white dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg shadow-sm">
+<div class="p-6 space-y-6">
+<div>
+<label class="block text-sm font-medium mb-2">Tone Presets</label>
+<div class="flex flex-wrap gap-3">
+<label class="flex items-center px-4 py-2 rounded-lg border border-border-light dark:border-border-dark cursor-pointer has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary/50 transition-all">
+<input class="sr-only" name="tone" type="radio"/>
+<span class="text-sm font-medium">Formal</span>
+</label>
+<label class="flex items-center px-4 py-2 rounded-lg border border-border-light dark:border-border-dark cursor-pointer has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary/50 transition-all">
+<input checked="" class="sr-only" name="tone" type="radio"/>
+<span class="text-sm font-medium">Casual</span>
+</label>
+<label class="flex items-center px-4 py-2 rounded-lg border border-border-light dark:border-border-dark cursor-pointer has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary/50 transition-all">
+<input class="sr-only" name="tone" type="radio"/>
+<span class="text-sm font-medium">Friendly</span>
+</label>
+</div>
+<p class="text-xs text-subtle-light dark:text-subtle-dark mt-2">e.g., "Dear Reader," (Formal), "Hey there," (Casual), "Hi friend," (Friendly)</p>
+</div>
+<div>
+<button class="w-full border-2 border-dashed border-border-light dark:border-border-dark rounded-lg py-6 flex flex-col items-center justify-center hover:border-primary/50 dark:hover:border-primary/50 transition-colors">
+<span class="material-symbols-outlined text-subtle-light dark:text-subtle-dark">mic</span>
+<span class="text-sm font-semibold mt-1">Upload voice samples</span>
+<span class="text-xs text-subtle-light dark:text-subtle-dark">or paste text</span>
+</button>
+</div>
+<div class="flex items-center justify-between">
+<label class="text-sm font-medium cursor-pointer" for="improve-model">Use my edits to improve my voice model</label>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" id="improve-model" type="checkbox"/>
+<div class="w-11 h-6 bg-border-light dark:bg-border-dark rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-600 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+</div>
+</section>
+<section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<div class="md:col-span-1">
+<h3 class="text-xl font-bold">Billing &amp; Plan</h3>
+<p class="text-sm text-subtle-light dark:text-subtle-dark mt-1">Manage your subscription.</p>
+</div>
+<div class="md:col-span-2 rounded-lg bg-cover bg-center" style='background-image: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.5)), url("https://lh3.googleusercontent.com/aida-public/AB6AXuAt42BCr1cWIkGofGZ3cjMXU0DBdKvs78eb1dQEwmF8oMg-TbW-u_f4sUoPUigxzdNf-_9tVsHYX1xZVwKANU62a5-W2nnENkNY09w9kkfX4_tOKcbF6psukeOk5uXhSkDOL6Kv7dGFk_yKRz170grLgaoHsPZ0VErX2xYvnZ5lHj_DrJ4UEon7XveinJMRQY3xPH6V1B2z3_7X6LN7ha4Un2UFXNvlSK5jbTwRTiwsW9a0jUH0svSbPljSKnu3qmwuxW3l-IjF");'>
+<div class="p-6 flex flex-col md:flex-row md:items-end md:justify-between h-full space-y-4 md:space-y-0 text-white">
+<div class="space-y-1">
+<p class="text-2xl font-bold">Pro Plan</p>
+<p class="text-sm opacity-90">Upgrade to unlock all features.</p>
+</div>
+<button class="bg-primary text-white font-bold py-2 px-4 rounded-lg text-sm self-start md:self-end hover:opacity-90 transition-opacity">Upgrade Now</button>
+</div>
+</div>
+</section>
+<section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<div class="md:col-span-1">
+<h3 class="text-xl font-bold">Security &amp; Privacy</h3>
+<p class="text-sm text-subtle-light dark:text-subtle-dark mt-1">Control your data and privacy settings.</p>
+</div>
+<div class="md:col-span-2 bg-white dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg shadow-sm divide-y divide-border-light dark:divide-border-dark">
+<div class="p-6 flex items-center justify-between">
+<label class="text-sm font-medium cursor-pointer pr-4" for="allow-training">Allow edits to be used for model training</label>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" id="allow-training" type="checkbox"/>
+<div class="w-11 h-6 bg-border-light dark:bg-border-dark rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:border-gray-300 dark:after:border-gray-600 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="p-6">
+<button class="text-sm font-semibold text-red-600 dark:text-red-500 hover:text-red-800 dark:hover:text-red-400">Delete Account</button>
+<p class="text-xs text-subtle-light dark:text-subtle-dark mt-1">This action is irreversible.</p>
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+
+</body></html>

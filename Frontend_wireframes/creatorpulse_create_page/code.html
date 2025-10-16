@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CreatorPulse - Generate Draft</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#13a4ec",
+            "background-light": "#f6f7f8",
+            "background-dark": "#101c22",
+            "foreground-light": "#111827",
+            "foreground-dark": "#f9fafb",
+            "surface-light": "#ffffff",
+            "surface-dark": "#1f2937",
+            "border-light": "#e5e7eb",
+            "border-dark": "#374151",
+            "placeholder-light": "#6b7280",
+            "placeholder-dark": "#9ca3af",
+            "muted-light": "#6b7280",
+            "muted-dark": "#9ca3af"
+          },
+          fontFamily: {
+            "display": ["Manrope", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-foreground-light dark:text-foreground-dark">
+<div class="flex flex-col min-h-screen">
+<header class="bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark sticky top-0 z-10">
+<div class="container mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex items-center justify-between h-16">
+<div class="flex items-center space-x-6">
+<a class="flex-shrink-0 text-primary flex items-center space-x-2" href="#">
+<svg class="h-8 w-8" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M44 11.2727C44 14.0109 39.8386 16.3957 33.69 17.6364C39.8386 18.877 44 21.2618 44 24C44 26.7382 39.8386 29.123 33.69 30.3636C39.8386 31.6043 44 33.9891 44 36.7273C44 40.7439 35.0457 44 24 44C12.9543 44 4 40.7439 4 36.7273C4 33.9891 8.16144 31.6043 14.31 30.3636C8.16144 29.123 4 26.7382 4 24C4 21.2618 8.16144 18.877 14.31 17.6364C8.16144 16.3957 4 14.0109 4 11.2727C4 7.25611 12.9543 4 24 4C35.0457 4 44 7.25611 44 11.2727Z" fill="currentColor"></path>
+</svg>
+<span class="font-bold text-xl hidden sm:inline">CreatorPulse</span>
+</a>
+<nav class="hidden md:flex items-center space-x-6">
+<a class="flex items-center space-x-2 text-sm font-medium text-muted-light dark:text-muted-dark hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center space-x-2 text-sm font-bold text-primary border-b-2 border-primary" href="#">
+<span class="material-symbols-outlined">edit_document</span>
+<span>Create</span>
+</a>
+<a class="flex items-center space-x-2 text-sm font-medium text-muted-light dark:text-muted-dark hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span>Analytics</span>
+</a>
+<a class="flex items-center space-x-2 text-sm font-medium text-muted-light dark:text-muted-dark hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+</div>
+<div class="flex items-center space-x-4">
+<button class="p-2 rounded-full hover:bg-background-light dark:hover:bg-surface-dark">
+<span class="material-symbols-outlined text-muted-light dark:text-muted-dark">notifications</span>
+</button>
+<button>
+<img alt="User profile" class="h-10 w-10 rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDiFhc4zosJAOHAg3mE5e_uB_sUO-zRcHGCnyTTbYWZvvOozEQ_qYZgdvf7bWwre_PF91YMy5wiHhuYfnFqF-k_elD-8j0UHOAFlNy_mXRchWdNH2A9yKRAIh6a-taCZFdff5c_USZqR5BPV0Rva7tLEAuS_jZLniqVpFksNWtCrP46QVFNAr9fvJBWW231p_tjfZK-2A9WYFvcGaDHkNrr2F3PMgkcXzB8mc1BmiJzbq9lcPnQlA03fFSRwBUrgYxyTB33F8ns"/>
+</button>
+</div>
+</div>
+<nav class="md:hidden pt-2 pb-4 border-t border-border-light dark:border-border-dark flex items-center justify-around">
+<a class="flex flex-col items-center space-y-1 text-xs font-medium text-muted-light dark:text-muted-dark hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex flex-col items-center space-y-1 text-xs font-bold text-primary" href="#">
+<span class="material-symbols-outlined">edit_document</span>
+<span>Create</span>
+</a>
+<a class="flex flex-col items-center space-y-1 text-xs font-medium text-muted-light dark:text-muted-dark hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span>Analytics</span>
+</a>
+<a class="flex flex-col items-center space-y-1 text-xs font-medium text-muted-light dark:text-muted-dark hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+</div>
+</header>
+<main class="flex-grow flex items-center justify-center container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="w-full max-w-[700px]">
+<div class="bg-surface-light dark:bg-surface-dark p-8 sm:p-10 rounded-xl shadow-sm space-y-8">
+<div class="text-center">
+<h2 class="text-3xl font-extrabold text-foreground-light dark:text-foreground-dark">Generate a New Draft</h2>
+<p class="mt-2 text-base text-muted-light dark:text-muted-dark max-w-lg mx-auto">Pick a bundle, add a focus if you like, and we’ll prepare a ready-to-edit newsletter draft in your voice.</p>
+</div>
+<form class="space-y-6">
+<div>
+<label class="block text-sm font-medium text-foreground-light dark:text-foreground-dark" for="bundle">Select Source Bundle <span class="text-red-500">*</span></label>
+<div class="mt-1 relative">
+<select class="form-select block w-full pl-3 pr-10 py-2 text-base border-border-light dark:border-border-dark focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-lg bg-background-light dark:bg-background-dark" id="bundle" name="bundle">
+<optgroup label="Preset Bundles">
+<option>AI &amp; ML Trends</option>
+<option>Creator Economy</option>
+<option>Marketing &amp; Growth</option>
+<option>Startups &amp; Innovation</option>
+<option>Cybersecurity &amp; Privacy</option>
+</optgroup>
+<optgroup label="Your Custom Bundles">
+</optgroup>
+</select>
+</div>
+<p class="mt-2 text-xs text-muted-light dark:text-muted-dark">AI &amp; ML Trends: The latest news, research, and breakthroughs in Artificial Intelligence and Machine Learning.</p>
+</div>
+<div>
+<label class="block text-sm font-medium text-foreground-light dark:text-foreground-dark" for="topic">What’s today’s focus? <span class="text-muted-light dark:text-muted-dark">(Optional)</span></label>
+<input class="form-input block w-full mt-1 border-border-light dark:border-border-dark rounded-lg bg-background-light dark:bg-background-dark focus:ring-primary focus:border-primary placeholder-placeholder-light dark:placeholder-placeholder-dark" id="topic" name="topic" placeholder="e.g., AI content automation or Web3 community growth" type="text"/>
+<p class="mt-2 text-xs text-muted-light dark:text-muted-dark">We’ll bias your draft around this topic.</p>
+</div>
+<div>
+<label class="block text-sm font-medium text-foreground-light dark:text-foreground-dark" for="tone">Tone <span class="text-muted-light dark:text-muted-dark">(Optional)</span></label>
+<select class="form-select block w-full mt-1 border-border-light dark:border-border-dark rounded-lg bg-background-light dark:bg-background-dark focus:ring-primary focus:border-primary" id="tone" name="tone">
+<option>Professional</option>
+<option>Conversational</option>
+<option>Analytical</option>
+<option>Friendly</option>
+</select>
+</div>
+<div>
+<button class="w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:bg-primary/50 disabled:cursor-not-allowed" id="generate-btn" type="submit">
+                Generate Draft
+              </button>
+<div class="w-full hidden items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-primary/80" id="generating-state">
+<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+<path class="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" fill="currentColor"></path>
+</svg>
+                Generating your draft...
+              </div>
+</div>
+<p class="text-xs text-center text-muted-light dark:text-muted-dark">We’ll analyze the latest posts from your selected bundle and prepare a newsletter draft in your voice.</p>
+</form>
+</div>
+<div class="hidden bg-surface-light dark:bg-surface-dark p-8 sm:p-10 rounded-xl shadow-sm space-y-6 text-center">
+<span class="material-symbols-outlined text-5xl text-muted-light dark:text-muted-dark mx-auto">link_off</span>
+<h3 class="text-lg font-medium text-foreground-light dark:text-foreground-dark">You haven’t connected any sources yet.</h3>
+<p class="text-sm text-muted-light dark:text-muted-dark">To generate drafts, you need to connect your sources first.</p>
+<a class="inline-flex items-center text-primary hover:underline" href="#">
+            Connect sources in Settings <span class="material-symbols-outlined text-base ml-1">arrow_forward</span>
+</a>
+</div>
+<div class="hidden mt-4 bg-red-100 dark:bg-red-900/20 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg relative" id="api-error" role="alert">
+<strong class="font-bold">Oops!</strong>
+<span class="block sm:inline">Something went wrong while generating your draft. Please try again.</span>
+</div>
+</div>
+</main>
+</div>
+<script>
+    const generateBtn = document.getElementById('generate-btn');
+    const generatingState = document.getElementById('generating-state');
+    const bundleSelect = document.getElementById('bundle');
+    const apiError = document.getElementById('api-error');
+    function updateButtonState() {
+      if (bundleSelect.value) {
+        generateBtn.disabled = false;
+      } else {
+        generateBtn.disabled = true;
+      }
+    }
+    bundleSelect.addEventListener('change', updateButtonState);
+    generateBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      apiError.classList.add('hidden');
+      generateBtn.classList.add('hidden');
+      generatingState.classList.remove('hidden');
+      generatingState.classList.add('inline-flex');
+      // Simulate API call
+      setTimeout(() => {
+        const isSuccess = Math.random() > 0.3; // Simulate success/failure
+        if (isSuccess) {
+          // On success, redirect to the editor page
+          // window.location.href = `/create/draft-12345`;
+          alert("Success! Redirecting to /create/draft-12345");
+          // For demo purposes, we'll just reset the state
+          generateBtn.classList.remove('hidden');
+          generatingState.classList.add('hidden');
+        } else {
+          // On failure, show error message
+          generateBtn.classList.remove('hidden');
+          generatingState.classList.add('hidden');
+          apiError.classList.remove('hidden');
+        }
+      }, 2000);
+    });
+    // Initial check
+    updateButtonState();
+  </script>
+
+</body></html>
