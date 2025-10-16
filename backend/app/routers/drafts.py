@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 from app.models.draft import (
     DraftResponse,
@@ -8,7 +8,7 @@ from app.models.draft import (
     SendDraftRequest
 )
 from app.services.draft_generator import DraftGeneratorService
-from app.database import get_db
+from app.database import get_db, SupabaseDB
 import uuid
 
 router = APIRouter()
@@ -16,7 +16,7 @@ draft_service = DraftGeneratorService()
 
 
 @router.post("/generate", response_model=DraftResponse)
-async def generate_draft(request: GenerateDraftRequest, user_id: str = "user-1"):
+async def generate_draft(request: GenerateDraftRequest, user_id: str = "00000000-0000-0000-0000-000000000001"):
     """Generate a new newsletter draft from bundle"""
     try:
         print(f"[DRAFT] Starting generation for bundle {request.bundle_id}")
@@ -36,96 +36,155 @@ async def generate_draft(request: GenerateDraftRequest, user_id: str = "user-1")
 
 
 @router.get("/", response_model=List[DraftResponse])
-async def get_drafts(user_id: str = "user-1", status: str = None):
+async def get_drafts(user_id: str = "00000000-0000-0000-0000-000000000001", status: Optional[str] = None):
     """Get all drafts for a user"""
-    # For MVP, return mock data
-    # TODO: Fetch from Supabase
-    mock_drafts = [
-        {
-            "id": "draft-1",
-            "user_id": user_id,
-            "bundle_id": "preset-1",
-            "bundle_name": "AI & ML Trends",
-            "topic": "AI content automation",
-            "tone": "professional",
-            "generated_html": "<p>Mock draft content</p>",
-            "edited_html": None,
-            "status": "draft",
-            "readiness_score": 85,
-            "sources": [],
-            "created_at": datetime.now(),
-            "updated_at": datetime.now(),
-            "sent_at": None,
-            "scheduled_for": None
-        }
-    ]
-    return mock_drafts
+    try:
+        db = SupabaseDB.get_service_client()  # Use service role to bypass RLS
+        query = db.table("drafts").select("*").eq("user_id", user_id)
+        
+        if status:
+            query = query.eq("status", status)
+        
+        response = query.order("created_at", desc=True).execute()
+        return response.data
+    except Exception as e:
+        print(f"[ERROR] Failed to fetch drafts: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch drafts: {str(e)}")
 
 
 @router.get("/{draft_id}", response_model=DraftResponse)
-async def get_draft(draft_id: str, user_id: str = "user-1"):
+async def get_draft(draft_id: str, user_id: str = "00000000-0000-0000-0000-000000000001"):
     """Get a specific draft"""
-    # For MVP, return mock data
-    # TODO: Fetch from Supabase
-    return {
-        "id": draft_id,
-        "user_id": user_id,
-        "bundle_id": "preset-1",
-        "bundle_name": "AI & ML Trends",
-        "topic": "AI content automation",
-        "tone": "professional",
-        "generated_html": "<h2>Mock Draft</h2><p>This is a generated draft.</p>",
-        "edited_html": None,
-        "status": "draft",
-        "readiness_score": 85,
-        "sources": [],
-        "created_at": datetime.now(),
-        "updated_at": datetime.now(),
-        "sent_at": None,
-        "scheduled_for": None
-    }
+    try:
+        db = SupabaseDB.get_service_client()  # Use service role to bypass RLS
+        response = db.table("drafts").select("*").eq("id", draft_id).eq("user_id", user_id).execute()
+        
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Draft not found")
+        
+        return response.data[0]
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Failed to fetch draft: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch draft: {str(e)}")
 
 
 @router.patch("/{draft_id}", response_model=DraftResponse)
-async def update_draft(draft_id: str, update: DraftUpdate, user_id: str = "user-1"):
+async def update_draft(draft_id: str, update: DraftUpdate, user_id: str = "00000000-0000-0000-0000-000000000001"):
     """Update a draft (autosave)"""
-    # For MVP, return mock updated draft
-    # TODO: Update in Supabase
-    return {
-        "id": draft_id,
-        "user_id": user_id,
-        "bundle_id": "preset-1",
-        "bundle_name": "AI & ML Trends",
-        "topic": "AI content automation",
-        "tone": "professional",
-        "generated_html": "<h2>Mock Draft</h2>",
-        "edited_html": update.edited_html,
-        "status": update.status or "draft",
-        "readiness_score": 85,
-        "sources": [],
-        "created_at": datetime.now(),
-        "updated_at": datetime.now(),
-        "sent_at": None,
-        "scheduled_for": update.scheduled_for
-    }
+    try:
+        db = SupabaseDB.get_service_client()  # Use service role to bypass RLS
+        
+        # Build update data
+        update_data = {}
+        if update.edited_html is not None:
+            update_data["edited_html"] = update.edited_html
+        if update.status is not None:
+            update_data["status"] = update.status
+        if update.scheduled_for is not None:
+            update_data["scheduled_for"] = update.scheduled_for.isoformat()
+        
+        if not update_data:
+            raise HTTPException(status_code=400, detail="No update data provided")
+        
+        response = db.table("drafts").update(update_data).eq("id", draft_id).eq("user_id", user_id).execute()
+        
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Draft not found")
+        
+        return response.data[0]
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Failed to update draft: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to update draft: {str(e)}")
+
+
+@router.delete("/{draft_id}")
+async def delete_draft(draft_id: str, user_id: str = "00000000-0000-0000-0000-000000000001"):
+    """Delete a draft"""
+    try:
+        db = SupabaseDB.get_service_client()  # Use service role to bypass RLS
+        response = db.table("drafts").delete().eq("id", draft_id).eq("user_id", user_id).execute()
+        
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Draft not found")
+        
+        return {"success": True, "message": "Draft deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Failed to delete draft: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete draft: {str(e)}")
 
 
 @router.post("/{draft_id}/send")
-async def send_draft(draft_id: str, request: SendDraftRequest, user_id: str = "user-1"):
+async def send_draft(draft_id: str, request: SendDraftRequest, user_id: str = "00000000-0000-0000-0000-000000000001"):
     """Send a draft via email"""
-    # For MVP, simulate sending
-    # TODO: Implement ESP integration
-    return {
-        "success": True,
-        "message": "Draft sent successfully",
-        "draft_id": draft_id,
-        "sent_to": request.recipients,
-        "sent_at": datetime.now()
-    }
+    try:
+        db = SupabaseDB.get_service_client()  # Use service role to bypass RLS
+        
+        # Get draft
+        draft_response = db.table("drafts").select("*").eq("id", draft_id).eq("user_id", user_id).execute()
+        if not draft_response.data:
+            raise HTTPException(status_code=404, detail="Draft not found")
+        
+        draft = draft_response.data[0]
+        
+        # Send email using email service
+        from app.services.email_service import EmailService
+        email_service = EmailService()
+        
+        # Use edited_html if available, otherwise use generated_html
+        html_content = draft.get("edited_html") or draft.get("generated_html")
+        subject = draft.get("topic") or draft.get("bundle_name", "Newsletter")
+        
+        send_result = await email_service.send_newsletter(
+            recipients=request.recipients,
+            subject=subject,
+            html_content=html_content,
+            draft_id=draft_id
+        )
+        
+        if send_result.get("success"):
+            # Mark as sent
+            sent_at = datetime.now().isoformat()
+            db.table("drafts").update({
+                "status": "sent",
+                "sent_at": sent_at
+            }).eq("id", draft_id).execute()
+            
+            # Create analytics entries for tracking
+            for recipient in request.recipients:
+                db.table("analytics").insert({
+                    "draft_id": draft_id,
+                    "sent_at": sent_at,
+                    "recipient_email": recipient
+                }).execute()
+            
+            return {
+                "success": True,
+                "message": "Draft sent successfully",
+                "draft_id": draft_id,
+                "sent_to": request.recipients,
+                "sent_at": sent_at,
+                "method": send_result.get("method", "unknown")
+            }
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to send email: {send_result.get('error', 'Unknown error')}"
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Failed to send draft: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to send draft: {str(e)}")
 
 
 @router.post("/{draft_id}/regenerate")
-async def regenerate_section(draft_id: str, section: str = "intro", user_id: str = "user-1"):
+async def regenerate_section(draft_id: str, section: str = "intro", user_id: str = "00000000-0000-0000-0000-000000000001"):
     """Regenerate a specific section of the draft"""
     # For MVP, return mock regenerated content
     # TODO: Implement OpenAI regeneration
@@ -139,10 +198,20 @@ async def regenerate_section(draft_id: str, section: str = "intro", user_id: str
 @router.post("/{draft_id}/reactions")
 async def save_reaction(draft_id: str, section_id: str = None, reaction: str = "thumbs_up"):
     """Save user feedback reaction"""
-    # For MVP, just acknowledge
-    # TODO: Store in Supabase for learning
-    return {
-        "success": True,
-        "message": "Feedback saved"
-    }
+    try:
+        db = SupabaseDB.get_service_client()  # Use service role to bypass RLS
+        
+        db.table("feedback").insert({
+            "draft_id": draft_id,
+            "section_id": section_id,
+            "reaction": reaction
+        }).execute()
+        
+        return {
+            "success": True,
+            "message": "Feedback saved"
+        }
+    except Exception as e:
+        print(f"[ERROR] Failed to save reaction: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to save reaction: {str(e)}")
 

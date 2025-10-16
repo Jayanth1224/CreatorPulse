@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.routers import drafts, bundles, analytics, auth
+from app.routers import drafts, bundles, analytics, auth, linkedin
 
 app = FastAPI(
     title="CreatorPulse API",
@@ -23,6 +23,7 @@ app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(bundles.router, prefix="/api/bundles", tags=["Bundles"])
 app.include_router(drafts.router, prefix="/api/drafts", tags=["Drafts"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics"])
+app.include_router(linkedin.router, prefix="/api/linkedin", tags=["LinkedIn"])
 
 
 @app.get("/")
@@ -43,6 +44,28 @@ async def health():
         "api": "operational",
         "database": "connected",
     }
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Start background services on startup"""
+    try:
+        from app.services.rss_crawler import rss_crawler
+        rss_crawler.start()
+        print("[STARTUP] RSS Crawler started")
+    except Exception as e:
+        print(f"[STARTUP ERROR] Failed to start RSS crawler: {str(e)}")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Stop background services on shutdown"""
+    try:
+        from app.services.rss_crawler import rss_crawler
+        rss_crawler.stop()
+        print("[SHUTDOWN] RSS Crawler stopped")
+    except Exception as e:
+        print(f"[SHUTDOWN ERROR] Failed to stop RSS crawler: {str(e)}")
 
 
 if __name__ == "__main__":

@@ -12,4 +12,5 @@ sendgrid==6.11.0
 python-magic==0.4.27
 httpx==0.27.2
 apscheduler==3.10.4
+pyjwt==2.8.0
 

@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { getMockBundles, generateMockDraft, tonePresets } from "@/lib/mock-data";
+import { getBundles, generateDraft } from "@/lib/api-client";
+import { tonePresets } from "@/lib/mock-data";
 import { Bundle } from "@/types";
 import { Loader2, Sparkles } from "lucide-react";
 
@@ -22,8 +23,15 @@ export default function CreatePage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    getMockBundles().then(setBundles);
+    loadBundles();
   }, []);
+
+  async function loadBundles() {
+    const response = await getBundles();
+    if (response.data) {
+      setBundles(response.data);
+    }
+  }
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,30 +44,18 @@ export default function CreatePage() {
     setError("");
     setIsGenerating(true);
 
-    try {
-      // Call real backend API
-      const response = await fetch('http://localhost:8000/api/drafts/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          bundle_id: selectedBundle,
-          topic: topic || undefined,
-          tone: tone,
-        }),
-      });
+    const response = await generateDraft(selectedBundle, topic || undefined, tone);
 
-      if (!response.ok) {
-        throw new Error('Failed to generate draft');
-      }
+    if (response.error) {
+      setError(response.error.detail);
+      setIsGenerating(false);
+      return;
+    }
 
-      const draft = await response.json();
-      
+    if (response.data) {
       // Redirect to editor
-      router.push(`/create/${draft.id}`);
-    } catch (err) {
-      console.error('Draft generation error:', err);
+      router.push(`/create/${response.data.id}`);
+    } else {
       setError("Failed to generate draft. Please try again.");
       setIsGenerating(false);
     }

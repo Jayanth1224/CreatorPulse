@@ -30,6 +30,19 @@ class Settings(BaseSettings):
     # Encryption
     encryption_key: str
     
+    # LinkedIn OAuth (optional)
+    linkedin_client_id: str = ""
+    linkedin_client_secret: str = ""
+    
+    # Email Configuration (optional)
+    sendgrid_api_key: str = ""
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    from_email: str = "noreply@creatorpulse.com"
+    from_name: str = "CreatorPulse"
+    
     @property
     def cors_origins_list(self) -> List[str]:
         """Convert comma-separated CORS origins to list"""

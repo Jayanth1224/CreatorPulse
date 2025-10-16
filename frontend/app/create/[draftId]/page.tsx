@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Navigation } from "@/components/layout/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { getMockDraft } from "@/lib/mock-data";
+import { getDraft, updateDraft, sendDraft, regenerateSection, saveFeedback } from "@/lib/api-client";
 import { Draft } from "@/types";
 import {
   Save,
@@ -18,6 +18,7 @@ import {
   ThumbsDown,
   Undo2,
   Loader2,
+  Check,
 } from "lucide-react";
 
 export default function EditorPage() {
@@ -27,74 +28,181 @@ export default function EditorPage() {
 
   const [draft, setDraft] = useState<Draft | null>(null);
   const [content, setContent] = useState("");
+  const [originalContent, setOriginalContent] = useState(""); // Store original generated content
   const [subject, setSubject] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [recipients, setRecipients] = useState("");
+  
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const isUserEditingRef = useRef(false);
 
   useEffect(() => {
-    // Fetch draft from backend API
-    fetch(`http://localhost:8000/api/drafts/${draftId}`)
-      .then(res => {
-        if (!res.ok) throw new Error('Draft not found');
-        return res.json();
-      })
-      .then((data) => {
-        // Transform backend response (snake_case) to match frontend types
-        const transformedDraft = {
-          ...data,
-          bundleName: data.bundle_name || data.bundleName,
-          generatedHtml: data.generated_html || data.generatedHtml,
-          editedHtml: data.edited_html || data.editedHtml,
-          readinessScore: data.readiness_score || data.readinessScore,
-          createdAt: data.created_at ? new Date(data.created_at) : (data.createdAt ? new Date(data.createdAt) : new Date()),
-          updatedAt: data.updated_at ? new Date(data.updated_at) : (data.updatedAt ? new Date(data.updatedAt) : new Date()),
-          sentAt: data.sent_at ? new Date(data.sent_at) : (data.sentAt ? new Date(data.sentAt) : null),
-          scheduledFor: data.scheduled_for ? new Date(data.scheduled_for) : (data.scheduledFor ? new Date(data.scheduledFor) : null),
-        };
-        setDraft(transformedDraft as Draft);
-        setContent(data.edited_html || data.generated_html || data.editedHtml || data.generatedHtml);
-        setSubject(data.topic || `${data.bundle_name || data.bundleName} Newsletter`);
-      })
-      .catch(err => {
-        console.error('Error loading draft:', err);
-        // Fallback to mock data
-        getMockDraft(draftId).then((data) => {
-          if (data) {
-            setDraft(data);
-            setContent(data.editedHtml || data.generatedHtml);
-            setSubject(data.topic || `${data.bundleName} Newsletter`);
-          }
-        });
-      });
+    loadDraft();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftId]);
 
-  // Autosave simulation
+  async function loadDraft() {
+    const response = await getDraft(draftId);
+    
+    if (response.error) {
+      setError(response.error.detail);
+      return;
+    }
+    
+    if (response.data) {
+      const data = response.data;
+      // Transform snake_case to camelCase
+      const transformedDraft = {
+        ...data,
+        bundleName: data.bundle_name || data.bundleName,
+        generatedHtml: data.generated_html || data.generatedHtml,
+        editedHtml: data.edited_html || data.editedHtml,
+        readinessScore: data.readiness_score || data.readinessScore,
+        createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+        updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
+        sentAt: data.sent_at ? new Date(data.sent_at) : null,
+        scheduledFor: data.scheduled_for ? new Date(data.scheduled_for) : null,
+      };
+      setDraft(transformedDraft as Draft);
+      
+      const htmlContent = data.edited_html || data.generated_html;
+      const generatedContent = data.generated_html;
+      
+      setContent(htmlContent);
+      setOriginalContent(generatedContent); // Store original for revert
+      
+      // Set initial content only if editor is not being edited by user
+      if (editorRef.current && !isUserEditingRef.current) {
+        editorRef.current.innerHTML = htmlContent;
+      }
+      
+      setSubject(data.topic || `${data.bundle_name} Newsletter`);
+    }
+  }
+  
+  // Effect to update editor when content changes from outside (e.g., initial load)
+  useEffect(() => {
+    if (editorRef.current && content && !isUserEditingRef.current) {
+      editorRef.current.innerHTML = content;
+    }
+  }, [content]);
+
+  // Autosave with debouncing
+  const saveContent = useCallback(async (htmlContent: string) => {
+    if (!draftId) return;
+    
+    setIsSaving(true);
+    
+    const response = await updateDraft(draftId, {
+      edited_html: htmlContent,
+    });
+    
+    setIsSaving(false);
+    
+    if (response.error) {
+      console.error("Autosave failed:", response.error);
+    } else {
+      setLastSaved(new Date());
+    }
+  }, [draftId]);
+
   useEffect(() => {
     if (!content || !draft) return;
     
-    const timer = setTimeout(() => {
-      setIsSaving(true);
-      setTimeout(() => {
-        setIsSaving(false);
-        setLastSaved(new Date());
-      }, 500);
-    }, 2000);
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    // Set new timeout for debounced save
+    saveTimeoutRef.current = setTimeout(() => {
+      saveContent(content);
+    }, 2000); // Save 2 seconds after user stops typing
+    
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [content, draft, saveContent]);
 
-    return () => clearTimeout(timer);
-  }, [content, draft]);
-
-  const handleSend = () => {
+  const handleSend = async () => {
+    if (!recipients.trim()) {
+      alert("Please enter at least one recipient email");
+      return;
+    }
+    
     setIsSending(true);
-    setTimeout(() => {
-      alert("Newsletter sent successfully! (Mock)");
+    
+    const emailList = recipients.split(",").map(email => email.trim());
+    const response = await sendDraft(draftId, emailList);
+    
+    setIsSending(false);
+    
+    if (response.error) {
+      alert(`Failed to send: ${response.error.detail}`);
+    } else {
+      alert("Newsletter sent successfully!");
       router.push("/dashboard");
-    }, 1500);
+    }
   };
 
-  const handleRegenerate = (section: string) => {
-    alert(`Regenerating ${section} section... (Mock)`);
+  const handleRegenerate = async (section: string) => {
+    const response = await regenerateSection(draftId, section);
+    
+    if (response.data) {
+      // Update content with regenerated section
+      // This is simplified - in production you'd merge the new section
+      alert(`${section} section regenerated!`);
+    }
   };
+
+  const handleFeedback = async (sectionId: string, reaction: 'thumbs_up' | 'thumbs_down') => {
+    await saveFeedback(draftId, sectionId, reaction);
+  };
+
+  const handleRevert = () => {
+    if (!originalContent) return;
+    
+    const confirmRevert = window.confirm(
+      "Are you sure you want to revert to the original AI-generated content? All your edits will be lost."
+    );
+    
+    if (confirmRevert) {
+      setContent(originalContent);
+      if (editorRef.current) {
+        editorRef.current.innerHTML = originalContent;
+      }
+      // Trigger autosave to update the database
+      saveContent(originalContent);
+    }
+  };
+
+  const handleManualSave = async () => {
+    if (!content) return;
+    await saveContent(content);
+  };
+
+  if (error) {
+    return (
+      <>
+        <Navigation />
+        <main className="container mx-auto px-4 py-8">
+          <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+            <h2 className="text-2xl font-bold text-destructive">Error Loading Draft</h2>
+            <p className="text-muted">{error}</p>
+            <Button onClick={() => router.push("/dashboard")}>
+              Back to Dashboard
+            </Button>
+          </div>
+        </main>
+      </>
+    );
+  }
 
   if (!draft) {
     return (
@@ -141,23 +249,43 @@ export default function EditorPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              <Undo2 className="h-4 w-4" />
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleRevert}
+              disabled={!originalContent || content === originalContent}
+              title="Revert to original AI-generated content"
+            >
+              <Undo2 className="h-4 w-4 mr-1" />
               Revert
             </Button>
-            <Button variant="outline" size="sm">
-              <Save className="h-4 w-4" />
-              Save
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleManualSave}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-1" />
+                  Save
+                </>
+              )}
             </Button>
             <Button size="sm" onClick={handleSend} disabled={isSending}>
               {isSending ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
                   Sending...
                 </>
               ) : (
                 <>
-                  <Send className="h-4 w-4" />
+                  <Send className="h-4 w-4 mr-1" />
                   Send
                 </>
               )}
@@ -201,10 +329,16 @@ export default function EditorPage() {
               </Label>
               <div className="bg-surface border border-border rounded-lg p-6 min-h-[600px]">
                 <div
+                  ref={editorRef}
                   contentEditable
                   suppressContentEditableWarning
-                  onInput={(e) => setContent(e.currentTarget.innerHTML)}
-                  dangerouslySetInnerHTML={{ __html: content }}
+                  onInput={(e) => {
+                    isUserEditingRef.current = true;
+                    setContent(e.currentTarget.innerHTML);
+                  }}
+                  onBlur={() => {
+                    isUserEditingRef.current = false;
+                  }}
                   className="prose prose-sm max-w-none focus:outline-none"
                   style={{
                     minHeight: "500px",
@@ -247,6 +381,38 @@ export default function EditorPage() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Send Recipients */}
+            <div className="bg-surface border border-border rounded-lg p-4">
+              <h3 className="font-semibold mb-3">Send Newsletter</h3>
+              <Input
+                placeholder="email@example.com, another@example.com"
+                value={recipients}
+                onChange={(e) => setRecipients(e.target.value)}
+                className="mb-3"
+              />
+              <p className="text-xs text-muted mb-3">
+                Enter email addresses separated by commas
+              </p>
+              <Button 
+                size="sm" 
+                className="w-full" 
+                onClick={handleSend}
+                disabled={isSending || !recipients.trim()}
+              >
+                {isSending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Send Now
+                  </>
+                )}
+              </Button>
+            </div>
+
             {/* Feedback */}
             <div className="bg-surface border border-border rounded-lg p-4">
               <h3 className="font-semibold mb-4">How's this draft?</h3>

@@ -6,7 +6,7 @@ import { Navigation } from "@/components/layout/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getMockDrafts } from "@/lib/mock-data";
+import { getDrafts } from "@/lib/api-client";
 import { formatDateTime } from "@/lib/utils";
 import { Draft } from "@/types";
 import { FileEdit, RefreshCw, Send, Clock, CheckCircle2 } from "lucide-react";
@@ -17,13 +17,45 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabType>("all");
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getMockDrafts().then((data) => {
-      setDrafts(data);
-      setLoading(false);
-    });
+    loadDrafts();
   }, []);
+
+  async function loadDrafts() {
+    setLoading(true);
+    setError(null);
+    
+    const response = await getDrafts();
+    
+    if (response.error) {
+      setError(response.error.detail);
+      setLoading(false);
+      return;
+    }
+    
+    if (response.data) {
+      // Transform snake_case to camelCase for dates
+      const transformedDrafts = response.data.map((draft: any) => ({
+        ...draft,
+        userId: draft.user_id || draft.userId,
+        bundleId: draft.bundle_id || draft.bundleId,
+        bundleName: draft.bundle_name || draft.bundleName,
+        generatedHtml: draft.generated_html || draft.generatedHtml,
+        editedHtml: draft.edited_html || draft.editedHtml,
+        readinessScore: draft.readiness_score || draft.readinessScore,
+        createdAt: draft.created_at ? new Date(draft.created_at) : (draft.createdAt ? new Date(draft.createdAt) : null),
+        updatedAt: draft.updated_at ? new Date(draft.updated_at) : (draft.updatedAt ? new Date(draft.updatedAt) : null),
+        sentAt: draft.sent_at ? new Date(draft.sent_at) : (draft.sentAt ? new Date(draft.sentAt) : null),
+        scheduledFor: draft.scheduled_for ? new Date(draft.scheduled_for) : (draft.scheduledFor ? new Date(draft.scheduledFor) : null),
+      }));
+      
+      setDrafts(transformedDrafts);
+    }
+    
+    setLoading(false);
+  }
 
   const filteredDrafts = drafts.filter((draft) => {
     if (activeTab === "all") return true;
@@ -72,7 +104,13 @@ export default function DashboardPage() {
         </div>
 
         {/* Drafts List */}
-        {loading ? (
+        {error ? (
+          <Card className="p-12 text-center border-destructive">
+            <h3 className="text-lg font-semibold mb-2 text-destructive">Error Loading Drafts</h3>
+            <p className="text-muted mb-6">{error}</p>
+            <Button onClick={loadDrafts}>Retry</Button>
+          </Card>
+        ) : loading ? (
           <div className="grid gap-4">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="p-6 animate-pulse">

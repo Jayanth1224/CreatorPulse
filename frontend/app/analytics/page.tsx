@@ -6,7 +6,7 @@ import { Navigation } from "@/components/layout/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getMockAnalytics, getMockDrafts } from "@/lib/mock-data";
+import { getAnalytics, getDrafts } from "@/lib/api-client";
 import { AnalyticsSummary, Draft } from "@/types";
 import { formatDateTime } from "@/lib/utils";
 import {
@@ -23,15 +23,47 @@ export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [timeframe, setTimeframe] = useState<"7d" | "30d">("7d");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([getMockAnalytics(), getMockDrafts()]).then(
-      ([analyticsData, draftsData]) => {
-        setAnalytics(analyticsData);
-        setDrafts(draftsData.filter((d) => d.status === "sent"));
-      }
-    );
+    loadData();
   }, []);
+
+  async function loadData() {
+    setLoading(true);
+    setError(null);
+    
+    const [analyticsResponse, draftsResponse] = await Promise.all([
+      getAnalytics(),
+      getDrafts("sent")
+    ]);
+    
+    if (analyticsResponse.error || draftsResponse.error) {
+      setError("Failed to load analytics data");
+      setLoading(false);
+      return;
+    }
+    
+    if (analyticsResponse.data) {
+      const data = analyticsResponse.data;
+      // Transform snake_case to camelCase
+      setAnalytics({
+        openRate: data.open_rate,
+        clickThroughRate: data.click_through_rate,
+        avgReviewTime: data.avg_review_time,
+        draftAcceptanceRate: data.draft_acceptance_rate,
+        totalDrafts: data.total_drafts,
+        totalSent: data.total_sent,
+      });
+    }
+    
+    if (draftsResponse.data) {
+      setDrafts(draftsResponse.data);
+    }
+    
+    setLoading(false);
+  }
 
   if (!analytics) {
     return (

@@ -60,8 +60,7 @@ class DraftGeneratorService:
         source_links = [entry["link"] for entry in scored_entries[:10] if entry.get("link")]
         
         # 7. Create draft object
-        draft = {
-            "id": f"draft-{uuid.uuid4().hex[:12]}",
+        draft_data = {
             "user_id": user_id,
             "bundle_id": bundle_id,
             "bundle_name": bundle["label"],
@@ -71,16 +70,21 @@ class DraftGeneratorService:
             "edited_html": None,
             "status": "draft",
             "readiness_score": readiness_score,
-            "sources": source_links,
-            "created_at": datetime.now(),
-            "updated_at": datetime.now(),
-            "sent_at": None,
-            "scheduled_for": None
+            "sources": source_links
         }
         
-        # TODO: Save to Supabase database
+        # 8. Save to Supabase database
+        from app.database import SupabaseDB
+        db = SupabaseDB.get_service_client()  # Use service role to bypass RLS
+        response = db.table("drafts").insert(draft_data).execute()
         
-        return draft
+        if not response.data:
+            raise Exception("Failed to save draft to database")
+        
+        saved_draft = response.data[0]
+        print(f"[GENERATOR] Draft saved to database with ID: {saved_draft['id']}")
+        
+        return saved_draft
     
     def _get_bundle(self, bundle_id: str) -> Dict:
         """Get bundle by ID"""

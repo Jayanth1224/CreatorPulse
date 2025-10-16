@@ -27,10 +27,10 @@ export interface Draft {
   status: "draft" | "sent" | "scheduled";
   readinessScore?: number;
   sources: string[];
-  createdAt: Date;
-  updatedAt: Date;
-  sentAt?: Date;
-  scheduledFor?: Date;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  sentAt?: Date | null;
+  scheduledFor?: Date | null;
 }
 
 export interface DraftSection {
