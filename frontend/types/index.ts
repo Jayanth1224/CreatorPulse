@@ -6,13 +6,23 @@ export interface User {
   createdAt: Date;
 }
 
+export type SourceType = 'rss' | 'twitter' | 'youtube';
+
+export interface Source {
+  id?: string;
+  type: SourceType;
+  value: string;  // URL, @handle, or channel_id
+  label?: string;
+  metadata?: Record<string, any>;
+}
+
 export interface Bundle {
   id: string;
   key: string;
   label: string;
   description: string;
   isPreset: boolean;
-  sources: string[];
+  sources: (string | Source)[];  // Support both old string format and new Source objects
 }
 
 export interface Draft {

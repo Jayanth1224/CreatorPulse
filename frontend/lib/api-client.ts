@@ -271,3 +271,28 @@ export async function disconnectLinkedIn() {
   });
 }
 
+// Source Management API
+export async function addSourceToBundle(bundleId: string, source: { type: string; value: string; label?: string; metadata?: any }) {
+  return await apiRequest(`/api/bundles/${bundleId}/sources`, {
+    method: 'POST',
+    body: JSON.stringify(source),
+  });
+}
+
+export async function removeSourceFromBundle(bundleId: string, sourceId: string) {
+  return await apiRequest(`/api/bundles/${bundleId}/sources/${sourceId}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function getBundleSources(bundleId: string) {
+  return await apiRequest(`/api/bundles/${bundleId}/sources`);
+}
+
+export async function validateSource(source: { type: string; value: string; label?: string; metadata?: any }) {
+  return await apiRequest('/api/bundles/sources/validate', {
+    method: 'POST',
+    body: JSON.stringify(source),
+  });
+}
+

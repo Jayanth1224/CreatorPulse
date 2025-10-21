@@ -27,12 +27,14 @@ CREATE TABLE IF NOT EXISTS bundles (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Sources table (for tracking RSS feeds)
+-- Sources table (for tracking RSS feeds, Twitter handles, YouTube channels)
 CREATE TABLE IF NOT EXISTS sources (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     bundle_id UUID REFERENCES bundles(id) ON DELETE CASCADE,
-    type TEXT DEFAULT 'rss',
-    feed_url TEXT NOT NULL,
+    type TEXT DEFAULT 'rss' CHECK (type IN ('rss', 'twitter', 'youtube')),
+    source_identifier TEXT NOT NULL,  -- RSS URL, Twitter handle, or YouTube channel ID
+    label TEXT,  -- Display name for the source
+    metadata JSONB DEFAULT '{}'::jsonb,  -- Type-specific data (follower count, video count, etc.)
     last_crawled TIMESTAMP WITH TIME ZONE,
     signal_score FLOAT DEFAULT 1.0,
     is_active BOOLEAN DEFAULT TRUE,
@@ -90,16 +92,18 @@ CREATE TABLE IF NOT EXISTS esp_credentials (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- RSS Feed Entries cache (temporary storage)
-CREATE TABLE IF NOT EXISTS rss_entries (
+-- Content Entries cache (temporary storage for RSS, Twitter, YouTube)
+CREATE TABLE IF NOT EXISTS content_entries (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     source_id UUID REFERENCES sources(id) ON DELETE CASCADE,
+    source_type TEXT NOT NULL,  -- 'rss', 'twitter', 'youtube'
     title TEXT NOT NULL,
     link TEXT NOT NULL,
     summary TEXT,
     published_at TIMESTAMP WITH TIME ZONE,
     author TEXT,
     content_hash TEXT UNIQUE,
+    metadata JSONB DEFAULT '{}'::jsonb,  -- Type-specific data (engagement, video duration, etc.)
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     expires_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() + INTERVAL '48 hours'
 );
@@ -111,8 +115,9 @@ CREATE INDEX IF NOT EXISTS idx_drafts_created_at ON drafts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_bundles_user_id ON bundles(user_id);
 CREATE INDEX IF NOT EXISTS idx_bundles_is_preset ON bundles(is_preset);
 CREATE INDEX IF NOT EXISTS idx_analytics_draft_id ON analytics(draft_id);
-CREATE INDEX IF NOT EXISTS idx_rss_entries_source_id ON rss_entries(source_id);
-CREATE INDEX IF NOT EXISTS idx_rss_entries_expires_at ON rss_entries(expires_at);
+CREATE INDEX IF NOT EXISTS idx_content_entries_source_id ON content_entries(source_id);
+CREATE INDEX IF NOT EXISTS idx_content_entries_source_type ON content_entries(source_type);
+CREATE INDEX IF NOT EXISTS idx_content_entries_expires_at ON content_entries(expires_at);
 
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -144,7 +149,7 @@ ALTER TABLE drafts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE feedback ENABLE ROW LEVEL SECURITY;
 ALTER TABLE analytics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE esp_credentials ENABLE ROW LEVEL SECURITY;
-ALTER TABLE rss_entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE content_entries ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for users
 CREATE POLICY "Users can view own profile" ON users
@@ -214,13 +219,13 @@ INSERT INTO bundles (id, key, label, description, is_preset, sources) VALUES
     ('preset-10', 'mindset-creativity', 'Mindset & Creativity', 'Creative thinking, mental models, and personal development.', TRUE, '[]'::jsonb)
 ON CONFLICT DO NOTHING;
 
--- Create cleanup function for expired RSS entries
-CREATE OR REPLACE FUNCTION cleanup_expired_rss_entries()
+-- Create cleanup function for expired content entries
+CREATE OR REPLACE FUNCTION cleanup_expired_content_entries()
 RETURNS void AS $$
 BEGIN
-    DELETE FROM rss_entries WHERE expires_at < NOW();
+    DELETE FROM content_entries WHERE expires_at < NOW();
 END;
 $$ LANGUAGE plpgsql;
 
--- Note: Set up a cron job or use pg_cron extension to run cleanup_expired_rss_entries() periodically
+-- Note: Set up a cron job or use pg_cron extension to run cleanup_expired_content_entries() periodically
 

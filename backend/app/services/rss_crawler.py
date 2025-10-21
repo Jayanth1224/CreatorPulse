@@ -1,10 +1,12 @@
 """
-Background RSS Crawler Service
-Periodically crawls RSS feeds and stores entries in database
+Background Content Crawler Service
+Periodically crawls RSS feeds, Twitter handles, and YouTube channels
 """
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from app.services.rss_service import RSSService
+from app.services.twitter_service import TwitterService
+from app.services.youtube_service import YouTubeService
 from app.database import get_db
 from datetime import datetime
 import hashlib
@@ -13,39 +15,41 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class RSSCrawler:
-    """Background service for crawling RSS feeds"""
+class ContentCrawler:
+    """Background service for crawling RSS feeds, Twitter handles, and YouTube channels"""
     
     def __init__(self):
         self.rss_service = RSSService()
+        self.twitter_service = TwitterService()
+        self.youtube_service = YouTubeService()
         self.scheduler = AsyncIOScheduler()
         self.is_running = False
     
     def start(self):
         """Start the background crawler"""
         if self.is_running:
-            logger.warning("RSS Crawler is already running")
+            logger.warning("Content Crawler is already running")
             return
         
         # Schedule crawling every 6 hours
         self.scheduler.add_job(
-            self.crawl_all_feeds,
+            self.crawl_all_sources,
             trigger=IntervalTrigger(hours=6),
-            id='rss_crawler',
-            name='Crawl RSS feeds',
+            id='content_crawler',
+            name='Crawl all content sources',
             replace_existing=True
         )
         
         # Also run immediately on startup
         self.scheduler.add_job(
-            self.crawl_all_feeds,
+            self.crawl_all_sources,
             id='initial_crawl',
-            name='Initial RSS crawl'
+            name='Initial content crawl'
         )
         
         self.scheduler.start()
         self.is_running = True
-        logger.info("RSS Crawler started")
+        logger.info("Content Crawler started")
     
     def stop(self):
         """Stop the background crawler"""
@@ -54,12 +58,12 @@ class RSSCrawler:
         
         self.scheduler.shutdown(wait=False)
         self.is_running = False
-        logger.info("RSS Crawler stopped")
+        logger.info("Content Crawler stopped")
     
-    async def crawl_all_feeds(self):
-        """Crawl all active RSS feeds and store entries"""
+    async def crawl_all_sources(self):
+        """Crawl all active sources (RSS, Twitter, YouTube) and store entries"""
         try:
-            logger.info("[RSS CRAWLER] Starting feed crawl...")
+            logger.info("[CONTENT CRAWLER] Starting content crawl...")
             
             db = get_db()
             
@@ -68,22 +72,34 @@ class RSSCrawler:
             sources = sources_response.data
             
             if not sources:
-                logger.info("[RSS CRAWLER] No active sources found")
+                logger.info("[CONTENT CRAWLER] No active sources found")
                 return
             
-            logger.info(f"[RSS CRAWLER] Found {len(sources)} active sources")
+            logger.info(f"[CONTENT CRAWLER] Found {len(sources)} active sources")
             
             total_entries = 0
             total_new_entries = 0
             
             for source in sources:
                 try:
-                    # Parse the feed
-                    entries = self.rss_service.parse_feed(source['feed_url'])
+                    source_type = source.get('type', 'rss')
+                    source_identifier = source.get('source_identifier', '')
+                    
+                    # Route to appropriate service based on source type
+                    if source_type == 'rss':
+                        entries = self.rss_service.parse_feed(source_identifier)
+                    elif source_type == 'twitter':
+                        entries = await self.twitter_service.scrape_handle(source_identifier)
+                    elif source_type == 'youtube':
+                        entries = await self.youtube_service.parse_channel_feed(source_identifier)
+                    else:
+                        logger.warning(f"[CONTENT CRAWLER] Unknown source type: {source_type}")
+                        continue
+                    
                     total_entries += len(entries)
                     
                     # Store entries in database
-                    new_count = await self._store_entries(entries, source['id'])
+                    new_count = await self._store_entries(entries, source['id'], source_type)
                     total_new_entries += new_count
                     
                     # Update last_crawled timestamp
@@ -91,22 +107,22 @@ class RSSCrawler:
                         "last_crawled": datetime.now().isoformat()
                     }).eq("id", source['id']).execute()
                     
-                    logger.info(f"[RSS CRAWLER] Processed {len(entries)} entries from {source['feed_url']} ({new_count} new)")
+                    logger.info(f"[CONTENT CRAWLER] Processed {len(entries)} entries from {source_type}:{source_identifier} ({new_count} new)")
                 
                 except Exception as e:
-                    logger.error(f"[RSS CRAWLER] Failed to crawl {source['feed_url']}: {str(e)}")
+                    logger.error(f"[CONTENT CRAWLER] Failed to crawl {source.get('type', 'unknown')}:{source.get('source_identifier', 'unknown')}: {str(e)}")
                     continue
             
-            logger.info(f"[RSS CRAWLER] Crawl complete. Processed {total_entries} entries, {total_new_entries} new")
+            logger.info(f"[CONTENT CRAWLER] Crawl complete. Processed {total_entries} entries, {total_new_entries} new")
             
             # Clean up expired entries
             await self._cleanup_expired_entries()
         
         except Exception as e:
-            logger.error(f"[RSS CRAWLER] Crawl failed: {str(e)}")
+            logger.error(f"[CONTENT CRAWLER] Crawl failed: {str(e)}")
     
-    async def _store_entries(self, entries: list, source_id: str) -> int:
-        """Store RSS entries in database, skipping duplicates"""
+    async def _store_entries(self, entries: list, source_id: str, source_type: str) -> int:
+        """Store content entries in database, skipping duplicates"""
         db = get_db()
         new_count = 0
         
@@ -116,27 +132,29 @@ class RSSCrawler:
                 content_hash = self._generate_content_hash(entry)
                 
                 # Check if entry already exists
-                existing = db.table("rss_entries").select("id").eq("content_hash", content_hash).execute()
+                existing = db.table("content_entries").select("id").eq("content_hash", content_hash).execute()
                 if existing.data:
                     continue  # Skip duplicate
                 
                 # Prepare entry data
                 entry_data = {
                     "source_id": source_id,
+                    "source_type": source_type,
                     "title": entry.get("title", "")[:500],  # Limit title length
                     "link": entry.get("link", ""),
                     "summary": entry.get("summary", "")[:2000],  # Limit summary length
-                    "published_at": entry.get("published_parsed"),
+                    "published_at": entry.get("published", datetime.now()),
                     "author": entry.get("author", "")[:200],
-                    "content_hash": content_hash
+                    "content_hash": content_hash,
+                    "metadata": entry.get("metadata", {})
                 }
                 
                 # Insert into database
-                db.table("rss_entries").insert(entry_data).execute()
+                db.table("content_entries").insert(entry_data).execute()
                 new_count += 1
             
             except Exception as e:
-                logger.error(f"[RSS CRAWLER] Failed to store entry: {str(e)}")
+                logger.error(f"[CONTENT CRAWLER] Failed to store entry: {str(e)}")
                 continue
         
         return new_count
@@ -147,16 +165,16 @@ class RSSCrawler:
         return hashlib.md5(content.encode()).hexdigest()
     
     async def _cleanup_expired_entries(self):
-        """Remove expired RSS entries from database"""
+        """Remove expired content entries from database"""
         try:
             db = get_db()
             
             # Call the cleanup function
-            db.rpc("cleanup_expired_rss_entries").execute()
+            db.rpc("cleanup_expired_content_entries").execute()
             
-            logger.info("[RSS CRAWLER] Cleaned up expired entries")
+            logger.info("[CONTENT CRAWLER] Cleaned up expired entries")
         except Exception as e:
-            logger.error(f"[RSS CRAWLER] Cleanup failed: {str(e)}")
+            logger.error(f"[CONTENT CRAWLER] Cleanup failed: {str(e)}")
     
     async def crawl_bundle_feeds(self, bundle_id: str) -> dict:
         """Manually trigger crawl for a specific bundle's feeds"""
@@ -189,5 +207,5 @@ class RSSCrawler:
 
 
 # Global crawler instance
-rss_crawler = RSSCrawler()
+content_crawler = ContentCrawler()
 

@@ -10,6 +10,8 @@ import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { tonePresets } from "@/lib/mock-data";
 import { Check, Mail, AlertCircle, Upload } from "lucide-react";
+import { SourceManager } from "@/components/SourceManager";
+import { Source } from "@/types";
 
 export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState<string>("account");
@@ -53,6 +55,12 @@ export default function SettingsPage() {
               Tone & Voice
             </NavButton>
             <NavButton
+              active={activeSection === "sources"}
+              onClick={() => setActiveSection("sources")}
+            >
+              Content Sources
+            </NavButton>
+            <NavButton
               active={activeSection === "billing"}
               onClick={() => setActiveSection("billing")}
             >
@@ -66,6 +74,7 @@ export default function SettingsPage() {
             {activeSection === "esp" && <ESPSection />}
             {activeSection === "recipients" && <RecipientsSection />}
             {activeSection === "tone" && <ToneSection />}
+            {activeSection === "sources" && <SourcesSection />}
             {activeSection === "billing" && <BillingSection />}
           </div>
         </div>
@@ -445,6 +454,59 @@ function BillingSection() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function SourcesSection() {
+  const [sources, setSources] = useState<Source[]>([
+    {
+      id: "1",
+      type: "rss",
+      value: "https://techcrunch.com/feed/",
+      label: "TechCrunch"
+    },
+    {
+      id: "2", 
+      type: "twitter",
+      value: "@elonmusk",
+      label: "Elon Musk"
+    },
+    {
+      id: "3",
+      type: "youtube", 
+      value: "UCBJycsmduvYEL83R_U4JriQ",
+      label: "Marques Brownlee"
+    }
+  ]);
+
+  const handleAddSource = (source: Omit<Source, 'id'>) => {
+    const newSource: Source = {
+      ...source,
+      id: Date.now().toString()
+    };
+    setSources([...sources, newSource]);
+  };
+
+  const handleRemoveSource = (sourceId: string) => {
+    setSources(sources.filter(s => s.id !== sourceId));
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Content Sources</CardTitle>
+        <CardDescription>
+          Manage your RSS feeds, Twitter handles, and YouTube channels for content aggregation
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <SourceManager
+          sources={sources}
+          onAddSource={handleAddSource}
+          onRemoveSource={handleRemoveSource}
+        />
+      </CardContent>
+    </Card>
   );
 }
 

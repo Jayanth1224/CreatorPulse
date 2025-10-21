@@ -1,12 +1,19 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any, Union
+
+
+class Source(BaseModel):
+    type: str  # 'rss', 'twitter', 'youtube'
+    value: str  # URL, @handle, or channel_id
+    label: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
 
 
 class BundleBase(BaseModel):
     key: str
     label: str
     description: str
-    sources: List[str] = []
+    sources: List[Union[str, Source]] = []  # Support both old string format and new Source objects
 
 
 class BundleCreate(BundleBase):
@@ -16,7 +23,7 @@ class BundleCreate(BundleBase):
 class BundleUpdate(BaseModel):
     label: Optional[str] = None
     description: Optional[str] = None
-    sources: Optional[List[str]] = None
+    sources: Optional[List[Union[str, Source]]] = None
 
 
 class Bundle(BundleBase):
@@ -34,5 +41,5 @@ class BundleResponse(BaseModel):
     label: str
     description: str
     is_preset: bool
-    sources: List[str]
+    sources: List[Union[str, Source]]  # Support both formats for backward compatibility
 
