@@ -36,7 +36,7 @@ async def get_preset_bundles():
 
 @router.get("/", response_model=List[BundleResponse])
 async def get_all_bundles(user_id: str = None):
-    """Get all bundles (presets + user custom bundles)"""
+    """Get all bundles (presets + user custom bundles) with source information"""
     try:
         db = SupabaseDB.get_service_client()  # Use service role to bypass RLS
         
@@ -47,7 +47,31 @@ async def get_all_bundles(user_id: str = None):
             # Just get presets
             response = db.table("bundles").select("*").eq("is_preset", True).execute()
         
-        return response.data
+        bundles = response.data
+        
+        # For each bundle, get its sources
+        for bundle in bundles:
+            try:
+                sources_response = db.table("sources").select("*").eq("bundle_id", bundle["id"]).execute()
+                sources = sources_response.data
+                
+                # Convert sources to the expected format
+                formatted_sources = []
+                for source in sources:
+                    formatted_sources.append({
+                        "id": source["id"],
+                        "type": source["type"],
+                        "value": source["source_identifier"],
+                        "label": source.get("label"),
+                        "metadata": source.get("metadata", {})
+                    })
+                
+                bundle["sources"] = formatted_sources
+            except Exception as e:
+                print(f"[ERROR] Failed to fetch sources for bundle {bundle['id']}: {str(e)}")
+                bundle["sources"] = []
+        
+        return bundles
     except Exception as e:
         print(f"[ERROR] Failed to fetch bundles: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch bundles: {str(e)}")

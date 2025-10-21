@@ -207,16 +207,16 @@ CREATE POLICY "Users can manage own ESP credentials" ON esp_credentials
 
 -- Insert preset bundles
 INSERT INTO bundles (id, key, label, description, is_preset, sources) VALUES
-    ('preset-1', 'ai-ml-trends', 'AI & ML Trends', 'The latest news, research, and breakthroughs in Artificial Intelligence and Machine Learning.', TRUE, '["https://techcrunch.com/category/artificial-intelligence/feed/", "https://venturebeat.com/category/ai/feed/"]'::jsonb),
-    ('preset-2', 'creator-economy', 'Creator Economy', 'Insights on the creator economy, monetization, and platform trends.', TRUE, '[]'::jsonb),
-    ('preset-3', 'marketing-growth', 'Marketing & Growth', 'Growth hacking, marketing strategies, and conversion optimization.', TRUE, '[]'::jsonb),
-    ('preset-4', 'startups-innovation', 'Startups & Innovation', 'Startup news, funding rounds, and innovation in tech.', TRUE, '[]'::jsonb),
-    ('preset-5', 'cybersecurity-privacy', 'Cybersecurity & Privacy', 'Security vulnerabilities, privacy concerns, and data protection news.', TRUE, '[]'::jsonb),
-    ('preset-6', 'productivity-workflow', 'Productivity & Workflow Tools', 'Tools and techniques to boost productivity and streamline workflows.', TRUE, '[]'::jsonb),
-    ('preset-7', 'sustainability-future-tech', 'Sustainability & Future Tech', 'Green technology, climate tech, and sustainable innovation.', TRUE, '[]'::jsonb),
-    ('preset-8', 'tech-policy-regulation', 'Tech Policy & Regulation', 'Regulatory changes, policy debates, and legal issues in tech.', TRUE, '[]'::jsonb),
-    ('preset-9', 'health-wellness-tech', 'Health & Wellness Tech', 'Digital health, wellness apps, and medical technology.', TRUE, '[]'::jsonb),
-    ('preset-10', 'mindset-creativity', 'Mindset & Creativity', 'Creative thinking, mental models, and personal development.', TRUE, '[]'::jsonb)
+    ('00000000-0000-0000-0000-000000000001', 'ai-ml-trends', 'AI & ML Trends', 'The latest news, research, and breakthroughs in Artificial Intelligence and Machine Learning.', TRUE, '["https://techcrunch.com/category/artificial-intelligence/feed/", "https://venturebeat.com/category/ai/feed/"]'::jsonb),
+    ('00000000-0000-0000-0000-000000000002', 'creator-economy', 'Creator Economy', 'Insights on the creator economy, monetization, and platform trends.', TRUE, '[]'::jsonb),
+    ('00000000-0000-0000-0000-000000000003', 'marketing-growth', 'Marketing & Growth', 'Growth hacking, marketing strategies, and conversion optimization.', TRUE, '[]'::jsonb),
+    ('00000000-0000-0000-0000-000000000004', 'startups-innovation', 'Startups & Innovation', 'Startup news, funding rounds, and innovation in tech.', TRUE, '[]'::jsonb),
+    ('00000000-0000-0000-0000-000000000005', 'cybersecurity-privacy', 'Cybersecurity & Privacy', 'Security vulnerabilities, privacy concerns, and data protection news.', TRUE, '[]'::jsonb),
+    ('00000000-0000-0000-0000-000000000006', 'productivity-workflow', 'Productivity & Workflow Tools', 'Tools and techniques to boost productivity and streamline workflows.', TRUE, '[]'::jsonb),
+    ('00000000-0000-0000-0000-000000000007', 'sustainability-future-tech', 'Sustainability & Future Tech', 'Green technology, climate tech, and sustainable innovation.', TRUE, '[]'::jsonb),
+    ('00000000-0000-0000-0000-000000000008', 'tech-policy-regulation', 'Tech Policy & Regulation', 'Regulatory changes, policy debates, and legal issues in tech.', TRUE, '[]'::jsonb),
+    ('00000000-0000-0000-0000-000000000009', 'health-wellness-tech', 'Health & Wellness Tech', 'Digital health, wellness apps, and medical technology.', TRUE, '[]'::jsonb),
+    ('00000000-0000-0000-0000-000000000010', 'mindset-creativity', 'Mindset & Creativity', 'Creative thinking, mental models, and personal development.', TRUE, '[]'::jsonb)
 ON CONFLICT DO NOTHING;
 
 -- Create cleanup function for expired content entries
