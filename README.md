@@ -198,32 +198,19 @@ pytest
 2. Set environment variables
 3. Deploy automatically on push to main
 
-### Backend (Railway)
-1. Connect your GitHub repository to Railway
+### Backend (Vercel)
+1. Connect your GitHub repository to Vercel
 2. Set environment variables
 3. Deploy automatically on push to main
 
 ### Database (Supabase)
 Already hosted—no deployment needed!
 
-## 📝 Development Roadmap
-
-- [x] **Phase 1**: Frontend with mock data
-- [x] **Phase 2**: Backend foundation
-- [ ] **Phase 3**: RSS integration (in progress)
-- [ ] **Phase 4**: AI draft generation
-- [ ] **Phase 5**: Email delivery
-- [ ] **Phase 6**: Frontend-backend connection
-- [ ] **Phase 7**: Analytics implementation
-- [ ] **Phase 8**: Testing & deployment
 
 ## 🤝 Contributing
 
 This is a private project currently in MVP development.
 
-## 📄 License
-
-Proprietary - All rights reserved
 
 ## 🐛 Known Issues
 
@@ -232,9 +219,6 @@ Proprietary - All rights reserved
 - Background RSS crawler not yet implemented
 - Voice training feature pending
 
-## 📧 Support
-
-For questions or issues, contact: jayanth@example.com
 
 ---
 
