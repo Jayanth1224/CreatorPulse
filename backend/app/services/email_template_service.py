@@ -25,22 +25,26 @@ class EmailTemplateService:
         # Extract structured content from draft
         structured_content = self._parse_draft_content(draft_content)
         
-        # Get featured story (first insight or first entry)
-        featured_story = self._get_featured_story(structured_content, entries)
+        # Get real articles (with source URLs)
+        real_articles = self._get_real_articles(entries)
         
-        # Get news items
-        news_items = self._get_news_items(structured_content, entries)
+        # Get AI insights (without source URLs)
+        ai_insights = self._get_ai_insights(structured_content)
+        
+        # Get trends section
+        trends_section = self._get_trends_section(structured_content)
         
         # Generate stats
-        stats = self._generate_stats(news_items, bundle_name)
+        stats = self._generate_stats(real_articles, bundle_name)
         
         # Build the complete HTML
         html_content = self.base_template.format(
             bundle_name=bundle_name,
             bundle_color=bundle_color,
             stats=stats,
-            featured_story=featured_story,
-            news_items=news_items,
+            real_articles=real_articles,
+            ai_insights=ai_insights,
+            trends_section=trends_section,
             footer=self._get_footer()
         )
         
@@ -208,6 +212,156 @@ class EmailTemplateService:
             font-weight: 500;
         }}
         
+        /* Real Articles Section */
+        .real-articles-section {{
+            padding: 24px;
+            background-color: #f8fafc;
+        }}
+        
+        .real-articles-section h3 {{
+            font-size: 20px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 16px;
+            border-bottom: 2px solid {bundle_color};
+            padding-bottom: 8px;
+        }}
+        
+        .article-item {{
+            display: flex;
+            margin-bottom: 20px;
+            padding: 16px;
+            background-color: white;
+            border-radius: 8px;
+            border-left: 4px solid {bundle_color};
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }}
+        
+        .article-item:last-child {{
+            margin-bottom: 0;
+        }}
+        
+        .article-image {{
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-right: 16px;
+            flex-shrink: 0;
+        }}
+        
+        .article-content {{
+            flex: 1;
+        }}
+        
+        .article-content h4 {{
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }}
+        
+        .article-content .summary {{
+            font-size: 14px;
+            color: #64748b;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }}
+        
+        .article-content .meta {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }}
+        
+        .article-content .read-more {{
+            color: {bundle_color};
+            text-decoration: none;
+            font-weight: 500;
+        }}
+        
+        /* AI Insights Section */
+        .insights-section {{
+            padding: 24px;
+            background-color: #fef7ff;
+        }}
+        
+        .insights-section h3 {{
+            font-size: 20px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 16px;
+            border-bottom: 2px solid #8b5cf6;
+            padding-bottom: 8px;
+        }}
+        
+        .insight-item {{
+            margin-bottom: 16px;
+            padding: 16px;
+            background-color: white;
+            border-radius: 8px;
+            border-left: 4px solid #8b5cf6;
+        }}
+        
+        .insight-item:last-child {{
+            margin-bottom: 0;
+        }}
+        
+        .insight-item h4 {{
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }}
+        
+        .insight-content {{
+            font-size: 14px;
+            color: #64748b;
+            line-height: 1.6;
+        }}
+        
+        /* Trends Section */
+        .trends-section {{
+            padding: 24px;
+            background-color: #f0f9ff;
+        }}
+        
+        .trends-section h3 {{
+            font-size: 20px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 16px;
+            border-bottom: 2px solid #0ea5e9;
+            padding-bottom: 8px;
+        }}
+        
+        .trend-item {{
+            margin-bottom: 12px;
+            padding: 12px;
+            background-color: white;
+            border-radius: 6px;
+            border-left: 3px solid #0ea5e9;
+        }}
+        
+        .trend-item:last-child {{
+            margin-bottom: 0;
+        }}
+        
+        .trend-content {{
+            font-size: 14px;
+            color: #64748b;
+            line-height: 1.5;
+        }}
+        
+        /* No content states */
+        .no-articles, .no-insights, .no-trends {{
+            text-align: center;
+            padding: 20px;
+            color: #64748b;
+            font-style: italic;
+        }}
+        
         /* Footer */
         .footer {{
             background-color: #1e293b;
@@ -276,13 +430,22 @@ class EmailTemplateService:
             {stats}
         </div>
         
-        <!-- Featured Story -->
-        {featured_story}
+        <!-- Real Articles Section -->
+        <div class="real-articles-section">
+            <h3>📰 Today's Top Stories</h3>
+            {real_articles}
+        </div>
         
-        <!-- News Items -->
-        <div class="news-section">
-            <h3>Today's Top Stories</h3>
-            {news_items}
+        <!-- AI Insights Section -->
+        <div class="insights-section">
+            <h3>💡 Key Insights</h3>
+            {ai_insights}
+        </div>
+        
+        <!-- Trends Section -->
+        <div class="trends-section">
+            <h3>📈 Trends to Watch</h3>
+            {trends_section}
         </div>
         
         <!-- Footer -->
@@ -317,6 +480,100 @@ class EmailTemplateService:
         
         return content
     
+    def _get_real_articles(self, entries: List[Dict]) -> str:
+        """Generate real articles section with working Read More links"""
+        if not entries:
+            return """
+            <div class="no-articles">
+                <p>No articles available at the moment. Check back later for the latest updates.</p>
+            </div>
+            """
+        
+        articles_html = []
+        for i, entry in enumerate(entries[:5]):  # Limit to 5 real articles
+            if entry.get('link') and entry.get('link') != '#':
+                # Get image if available
+                image_url = self._get_image_for_content(entry.get('title', ''), entry.get('summary', ''))
+                image_html = f'<img src="{image_url}" alt="{entry.get("title", "")}" class="article-image">' if image_url else ''
+                
+                # Get the actual article content (summary or description)
+                article_content = entry.get('summary', '') or entry.get('description', '')
+                
+                # Clean HTML tags and get first couple of lines
+                import re
+                clean_content = re.sub(r'<[^>]+>', '', article_content)
+                clean_content = clean_content.strip()
+                
+                # Show first 2-3 lines of actual content
+                content_lines = clean_content.split('\n')[:2]
+                display_content = ' '.join(content_lines)[:300]  # Limit to ~300 chars
+                
+                articles_html.append(f"""
+                <div class="article-item">
+                    {image_html}
+                    <div class="article-content">
+                        <h4>{entry.get('title', f'Article {i+1}')}</h4>
+                        <div class="summary">{display_content}...</div>
+                        <div class="meta">
+                            <a href="{entry.get('link')}" class="read-more">Read Full Article →</a>
+                        </div>
+                    </div>
+                </div>
+                """)
+        
+        return ''.join(articles_html) if articles_html else """
+        <div class="no-articles">
+            <p>No articles with valid sources available at the moment.</p>
+        </div>
+        """
+    
+    def _get_ai_insights(self, structured_content: Dict) -> str:
+        """Generate AI insights section without fake Read More links"""
+        insights = structured_content.get("insights", [])
+        if not insights:
+            return """
+            <div class="no-insights">
+                <p>No insights available at the moment.</p>
+            </div>
+            """
+        
+        insights_html = []
+        for i, insight in enumerate(insights[:3]):  # Limit to 3 insights
+            title_match = re.search(r'<h3>(.*?)</h3>', insight)
+            content_match = re.search(r'<p>(.*?)</p>', insight)
+            
+            title = title_match.group(1) if title_match else f"Insight {i+1}"
+            content = content_match.group(1) if content_match else insight
+            
+            insights_html.append(f"""
+            <div class="insight-item">
+                <h4>{title}</h4>
+                <div class="insight-content">{content}</div>
+            </div>
+            """)
+        
+        return ''.join(insights_html)
+    
+    def _get_trends_section(self, structured_content: Dict) -> str:
+        """Generate trends section without links"""
+        trends = structured_content.get("trends", [])
+        if not trends:
+            return """
+            <div class="no-trends">
+                <p>No trend analysis available at the moment.</p>
+            </div>
+            """
+        
+        trends_html = []
+        for trend in trends[:3]:  # Limit to 3 trends
+            trends_html.append(f"""
+            <div class="trend-item">
+                <div class="trend-content">{trend}</div>
+            </div>
+            """)
+        
+        return ''.join(trends_html)
+    
     def _get_featured_story(self, structured_content: Dict, entries: List[Dict]) -> str:
         """Generate featured story section"""
         if structured_content["insights"]:
@@ -338,11 +595,14 @@ class EmailTemplateService:
         elif entries:
             # Use first entry as featured story
             entry = entries[0]
+            link_url = entry.get('link', '#')
+            # Only show read more link if we have a real URL
+            read_more_link = f'<a href="{link_url}" class="read-more">Read Full Story →</a>' if link_url and link_url != '#' else ''
             return f"""
             <div class="featured-story">
                 <h2>{entry.get('title', 'Featured Story')}</h2>
                 <div class="summary">{entry.get('summary', '')[:200]}...</div>
-                <a href="{entry.get('link', '#')}" class="read-more">Read Full Story →</a>
+                {read_more_link}
             </div>
             """
         else:

@@ -71,4 +71,5 @@ class DraftResponse(BaseModel):
 class SendDraftRequest(BaseModel):
     recipients: List[str]
     subject: Optional[str] = None
+    bundle_color: Optional[str] = None
 

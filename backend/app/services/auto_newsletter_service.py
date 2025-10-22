@@ -157,8 +157,8 @@ class AutoNewsletterService:
     
     def _get_draft_url(self, draft_id: str) -> str:
         """Generate the URL for editing a draft"""
-        base_url = "http://localhost:3000"  # This should come from environment
-        return f"{base_url}/create/{draft_id}"
+        from app.config import settings
+        return f"{settings.frontend_url}/create/{draft_id}"
     
     async def process_scheduled_newsletters(self):
         """Process all auto-newsletters that are due for generation"""

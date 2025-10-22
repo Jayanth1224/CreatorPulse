@@ -93,6 +93,8 @@ CREATE TABLE IF NOT EXISTS analytics (
     opened_at TIMESTAMP WITH TIME ZONE,
     clicked_at TIMESTAMP WITH TIME ZONE,
     recipient_email TEXT,
+    token TEXT,
+    last_clicked_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -132,6 +134,7 @@ CREATE INDEX IF NOT EXISTS idx_auto_newsletters_active ON auto_newsletters(is_ac
 CREATE INDEX IF NOT EXISTS idx_bundles_user_id ON bundles(user_id);
 CREATE INDEX IF NOT EXISTS idx_bundles_is_preset ON bundles(is_preset);
 CREATE INDEX IF NOT EXISTS idx_analytics_draft_id ON analytics(draft_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_token ON analytics(token);
 CREATE INDEX IF NOT EXISTS idx_content_entries_source_id ON content_entries(source_id);
 CREATE INDEX IF NOT EXISTS idx_content_entries_source_type ON content_entries(source_type);
 CREATE INDEX IF NOT EXISTS idx_content_entries_expires_at ON content_entries(expires_at);

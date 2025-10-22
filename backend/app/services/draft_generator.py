@@ -54,8 +54,8 @@ class DraftGeneratorService:
         )
         print(f"[GENERATOR] AI draft generated successfully")
         
-        # 5. Generate professional email template
-        print(f"[GENERATOR] Step 5: Generating professional email template")
+        # 5. Generate professional email template with new structure
+        print(f"[GENERATOR] Step 5: Generating professional email template with separated content")
         bundle_color = bundle.get("color", "#3B82F6")
         full_email_html = self.email_template_service.generate_newsletter_html(
             draft_content=ai_generated_html,
@@ -64,7 +64,7 @@ class DraftGeneratorService:
             entries=scored_entries[:10],
             include_images=True
         )
-        print(f"[GENERATOR] Email template generated successfully")
+        print(f"[GENERATOR] Email template with new structure generated successfully")
         
         # 6. Use original AI-generated content for editing (don't extract from template)
         print(f"[GENERATOR] Step 6: Using original AI content for editing")

@@ -49,6 +49,8 @@ SECRET_KEY=your-secret-key-for-jwt
 ENCRYPTION_KEY=your-32-byte-base64-key
 
 CORS_ORIGINS=http://localhost:3000
+FRONTEND_URL=http://localhost:3000
+API_BASE_URL=http://localhost:8000
 ```
 
 ### 4. Set Up Supabase Database

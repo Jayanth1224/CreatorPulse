@@ -1,10 +1,17 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Response, Request
+from fastapi.responses import RedirectResponse
 from app.models.analytics import AnalyticsSummary
 from app.database import get_db, SupabaseDB
 from app.utils.auth import get_current_user
 from typing import Optional
+import base64
 
 router = APIRouter()
+
+# 1x1 transparent GIF for tracking pixel
+TRANSPARENT_GIF = base64.b64decode(
+    "R0lGODlhAQABAPAAAAAAAAAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
+)
 
 
 @router.get("/", response_model=AnalyticsSummary)
@@ -135,4 +142,59 @@ async def track_link_click(draft_id: str, recipient_email: Optional[str] = None)
     except Exception as e:
         print(f"[ERROR] Failed to track click: {str(e)}")
         return {"success": False, "error": str(e)}
+
+
+@router.get("/track/open/{draft_id}")
+async def track_email_open_get(draft_id: str, token: Optional[str] = None):
+    """Track email open event via GET (for tracking pixel)"""
+    try:
+        db = SupabaseDB.get_service_client()
+        
+        # Find the analytics record
+        query = db.table("analytics").select("*").eq("draft_id", draft_id)
+        if token:
+            query = query.eq("token", token)
+        
+        response = query.execute()
+        
+        if response.data:
+            # Update with opened_at timestamp
+            from datetime import datetime
+            db.table("analytics").update({
+                "opened_at": datetime.now().isoformat()
+            }).eq("id", response.data[0]["id"]).execute()
+        
+        # Return 1x1 transparent GIF
+        return Response(content=TRANSPARENT_GIF, media_type="image/gif")
+    except Exception as e:
+        print(f"[ERROR] Failed to track open: {str(e)}")
+        # Still return a pixel to avoid broken images
+        return Response(content=TRANSPARENT_GIF, media_type="image/gif")
+
+
+@router.get("/track/click/{draft_id}")
+async def track_link_click_get(draft_id: str, url: str, token: Optional[str] = None):
+    """Track link click event via GET (for wrapped links)"""
+    try:
+        db = SupabaseDB.get_service_client()
+        
+        # Find the analytics record
+        query = db.table("analytics").select("*").eq("draft_id", draft_id)
+        if token:
+            query = query.eq("token", token)
+        
+        response = query.execute()
+        
+        if response.data:
+            # Update with clicked_at timestamp
+            from datetime import datetime
+            db.table("analytics").update({
+                "clicked_at": datetime.now().isoformat(),
+                "last_clicked_url": url
+            }).eq("id", response.data[0]["id"]).execute()
+    except Exception as e:
+        print(f"[ERROR] Failed to track click: {str(e)}")
+    finally:
+        # Always redirect to the original URL
+        return RedirectResponse(url=url, status_code=302)
 

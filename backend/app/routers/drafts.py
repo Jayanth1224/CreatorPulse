@@ -139,16 +139,41 @@ async def send_draft(draft_id: str, request: SendDraftRequest, current_user: dic
         
         draft = draft_response.data[0]
         
-        # Send email using new template system
+        # Send email using new template system with token tracking
         from app.services.email_service import EmailService
         email_service = EmailService()
         
-        send_result = await email_service.send_newsletter_from_draft(
+        # Get the rendered email content
+        from app.services.email_renderer_service import EmailRendererService
+        renderer = EmailRendererService()
+        email_data = await renderer.render_draft_for_sending(
             draft_id=draft_id,
-            recipients=request.recipients,
             custom_subject=request.subject,
-            custom_bundle_color=request.bundle_color,
-            use_sendgrid=True
+            custom_bundle_color=request.bundle_color
+        )
+        
+        # Create analytics entries with tokens first
+        recipients_with_tokens = []
+        for recipient in request.recipients:
+            token = str(uuid.uuid4())
+            db.table("analytics").insert({
+                "draft_id": draft_id,
+                "sent_at": datetime.now().isoformat(),
+                "recipient_email": recipient,
+                "token": token
+            }).execute()
+            
+            recipients_with_tokens.append({
+                "email": recipient,
+                "token": token
+            })
+        
+        send_result = await email_service.send_newsletter_with_tokens(
+            recipients_with_tokens=recipients_with_tokens,
+            subject=email_data["subject"],
+            html_content=email_data["html_content"],
+            draft_id=draft_id,
+            use_sendgrid=False  # Use SMTP for now
         )
         
         if send_result.get("success"):
@@ -158,14 +183,6 @@ async def send_draft(draft_id: str, request: SendDraftRequest, current_user: dic
                 "status": "sent",
                 "sent_at": sent_at
             }).eq("id", draft_id).execute()
-            
-            # Create analytics entries for tracking
-            for recipient in request.recipients:
-                db.table("analytics").insert({
-                    "draft_id": draft_id,
-                    "sent_at": sent_at,
-                    "recipient_email": recipient
-                }).execute()
             
             return {
                 "success": True,

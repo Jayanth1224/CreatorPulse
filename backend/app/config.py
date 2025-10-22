@@ -25,7 +25,13 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     
     # CORS
-    cors_origins: str = "http://localhost:3000"
+    cors_origins: str = "http://localhost:3001"
+    
+    # Frontend URL for email links
+    frontend_url: str = "http://localhost:3001"
+    
+    # API Base URL for tracking links
+    api_base_url: str = "http://localhost:8000"
     
     # Encryption
     encryption_key: str

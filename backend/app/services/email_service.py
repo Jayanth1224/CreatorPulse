@@ -57,6 +57,33 @@ class EmailService:
                 "method": "simulated"
             }
     
+    async def send_newsletter_with_tokens(
+        self,
+        recipients_with_tokens: List[dict],
+        subject: str,
+        html_content: str,
+        draft_id: str,
+        use_sendgrid: bool = True
+    ) -> dict:
+        """Send newsletter to recipients with per-recipient token tracking"""
+        
+        if use_sendgrid and self.sendgrid_api_key:
+            return await self._send_via_sendgrid_with_tokens(recipients_with_tokens, subject, html_content, draft_id)
+        elif self.smtp_host:
+            return await self._send_via_smtp_with_tokens(recipients_with_tokens, subject, html_content, draft_id)
+        else:
+            # Fallback: simulate sending
+            print(f"[EMAIL] Simulating send to {len(recipients_with_tokens)} recipients")
+            print(f"[EMAIL] Subject: {subject}")
+            print(f"[EMAIL] Draft ID: {draft_id}")
+            
+            return {
+                "success": True,
+                "recipients_count": len(recipients_with_tokens),
+                "message_id": f"simulated-{draft_id}",
+                "method": "simulated"
+            }
+    
     async def _send_via_sendgrid(
         self,
         recipients: List[str],
@@ -137,18 +164,76 @@ class EmailService:
                 "method": "smtp"
             }
     
-    def _generate_tracking_pixel(self, draft_id: str) -> str:
+    async def _send_via_smtp_with_tokens(
+        self,
+        recipients_with_tokens: List[dict],
+        subject: str,
+        html_content: str,
+        draft_id: str
+    ) -> dict:
+        """Send email via SMTP with per-recipient token tracking"""
+        try:
+            sent_count = 0
+            
+            for recipient_data in recipients_with_tokens:
+                recipient = recipient_data["email"]
+                token = recipient_data["token"]
+                
+                # Generate personalized tracking for this recipient
+                tracking_pixel = self._generate_tracking_pixel(draft_id, token)
+                html_with_tracking = html_content + tracking_pixel
+                html_with_links = self._wrap_links(html_with_tracking, draft_id, token)
+                
+                msg = MIMEMultipart('alternative')
+                msg['Subject'] = subject
+                msg['From'] = f"{self.from_name} <{self.from_email}>"
+                msg['To'] = recipient
+                
+                html_part = MIMEText(html_with_links, 'html')
+                msg.attach(html_part)
+                
+                # Send via SMTP
+                with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
+                    server.starttls()
+                    if self.smtp_username and self.smtp_password:
+                        server.login(self.smtp_username, self.smtp_password)
+                    server.send_message(msg)
+                    sent_count += 1
+            
+            return {
+                "success": True,
+                "recipients_count": sent_count,
+                "message_id": f"smtp-{hash(subject)}",
+                "method": "smtp"
+            }
+        
+        except Exception as e:
+            print(f"[EMAIL ERROR] SMTP send failed: {str(e)}")
+            return {
+                "success": False,
+                "error": str(e),
+                "method": "smtp"
+            }
+    
+    def _generate_tracking_pixel(self, draft_id: str, token: str = None) -> str:
         """Generate tracking pixel HTML for open tracking"""
-        tracking_url = f"https://api.creatorpulse.com/api/analytics/track/open/{draft_id}"
+        from app.config import settings
+        token_param = f"?token={token}" if token else ""
+        tracking_url = f"{settings.api_base_url}/api/analytics/track/open/{draft_id}{token_param}"
         return f'<img src="{tracking_url}" width="1" height="1" style="display:none;" alt="" />'
     
-    def _wrap_links(self, html_content: str, draft_id: str) -> str:
+    def _wrap_links(self, html_content: str, draft_id: str, token: str = None) -> str:
         """Wrap all links for click tracking"""
+        from app.config import settings
         # Find all href attributes in anchor tags
         def replace_link(match):
             original_url = match.group(1)
+            # Skip tracking for certain URLs
+            if original_url.startswith('#') or original_url.startswith('mailto:') or original_url.startswith('tel:'):
+                return f'href="{original_url}"'
             # Create tracking URL
-            tracking_url = f"https://api.creatorpulse.com/api/analytics/track/click/{draft_id}?url={original_url}"
+            token_param = f"&token={token}" if token else ""
+            tracking_url = f"{settings.api_base_url}/api/analytics/track/click/{draft_id}?url={original_url}{token_param}"
             return f'href="{tracking_url}"'
         
         # Replace all href attributes

@@ -33,18 +33,15 @@ class EmailRendererService:
         # Use custom color if provided, otherwise use bundle color
         bundle_color = custom_bundle_color or bundle_info.get("color", "#3B82F6")
         
-        # Use full_email_html if available, otherwise generate from template
-        if draft.get("full_email_html"):
-            final_html = draft.get("full_email_html")
-        else:
-            # Fallback: generate from template
-            final_html = self.template_service.generate_newsletter_html(
-                draft_content=draft.get("generated_html", ""),
-                bundle_name=draft.get("bundle_name", "Newsletter"),
-                bundle_color=bundle_color,
-                entries=self._get_draft_entries(draft),
-                include_images=True
-            )
+        # Always generate from new template structure (ignore old full_email_html)
+        # This ensures we use the new separated content structure
+        final_html = self.template_service.generate_newsletter_html(
+            draft_content=draft.get("generated_html", ""),
+            bundle_name=draft.get("bundle_name", "Newsletter"),
+            bundle_color=bundle_color,
+            entries=self._get_draft_entries(draft),
+            include_images=True
+        )
         
         # Generate subject line
         subject = custom_subject or self._generate_subject_line(draft)
@@ -106,15 +103,19 @@ class EmailRendererService:
         sources = draft.get("sources", [])
         entries = []
         
-        for source_url in sources[:10]:  # Limit to 10 sources
-            entries.append({
-                "title": f"Source Article",
-                "link": source_url,
-                "summary": "Read the full article for more details.",
-                "published": None,
-                "image": None
-            })
+        print(f"[EMAIL_RENDERER] Draft sources: {sources}")
         
+        for source_url in sources[:10]:  # Limit to 10 sources
+            if source_url and source_url.strip():  # Only add non-empty URLs
+                entries.append({
+                    "title": f"Source Article",
+                    "link": source_url,
+                    "summary": "Read the full article for more details.",
+                    "published": None,
+                    "image": None
+                })
+        
+        print(f"[EMAIL_RENDERER] Generated entries: {len(entries)}")
         return entries
     
     def _generate_subject_line(self, draft: Dict) -> str:
