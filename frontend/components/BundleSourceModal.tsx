@@ -14,12 +14,14 @@ interface BundleSourceModalProps {
   bundleName: string;
   isOpen: boolean;
   onClose: () => void;
+  onSourcesChanged?: () => void; // Callback when sources are modified
 }
 
-export function BundleSourceModal({ bundleId, bundleName, isOpen, onClose }: BundleSourceModalProps) {
+export function BundleSourceModal({ bundleId, bundleName, isOpen, onClose, onSourcesChanged }: BundleSourceModalProps) {
   const [sources, setSources] = useState<Source[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -32,10 +34,15 @@ export function BundleSourceModal({ bundleId, bundleName, isOpen, onClose }: Bun
       setLoading(true);
       setError(null);
       const response = await getBundleSources(bundleId);
-      setSources(response || []);
+      
+      // Ensure we always have an array
+      const sourcesData = response?.data || response || [];
+      setSources(Array.isArray(sourcesData) ? sourcesData : []);
+      setHasChanges(false); // Reset changes flag when loading
     } catch (err) {
       setError("Failed to load sources");
       console.error("Error loading sources:", err);
+      setSources([]); // Ensure sources is always an array
     } finally {
       setLoading(false);
     }
@@ -55,7 +62,9 @@ export function BundleSourceModal({ bundleId, bundleName, isOpen, onClose }: Bun
           ...source,
           id: data.source_id
         };
-        setSources([...sources, newSource]);
+        setSources([...(Array.isArray(sources) ? sources : []), newSource]);
+        setHasChanges(true);
+        onSourcesChanged?.(); // Notify parent of changes
         console.log("Source added successfully:", newSource);
         setError(null); // Clear any previous errors
       } else if (response.error) {
@@ -74,7 +83,9 @@ export function BundleSourceModal({ bundleId, bundleName, isOpen, onClose }: Bun
   const handleRemoveSource = async (sourceId: string) => {
     try {
       await removeSourceFromBundle(bundleId, sourceId);
-      setSources(sources.filter(s => s.id !== sourceId));
+      setSources((Array.isArray(sources) ? sources : []).filter(s => s.id !== sourceId));
+      setHasChanges(true);
+      onSourcesChanged?.(); // Notify parent of changes
     } catch (err) {
       setError("Failed to remove source");
       console.error("Error removing source:", err);
@@ -100,6 +111,8 @@ export function BundleSourceModal({ bundleId, bundleName, isOpen, onClose }: Bun
       
       // Reload sources from server to ensure UI is in sync
       await loadSources();
+      setHasChanges(true);
+      onSourcesChanged?.(); // Notify parent of changes
       
       if (successCount === newSources.length) {
         console.log("All sources added successfully");
@@ -115,11 +128,9 @@ export function BundleSourceModal({ bundleId, bundleName, isOpen, onClose }: Bun
   };
 
   const getSourceStats = () => {
-    if (!Array.isArray(sources)) {
-      return {};
-    }
+    const sourcesArray = Array.isArray(sources) ? sources : [];
     
-    const stats = sources.reduce((acc, source) => {
+    const stats = sourcesArray.reduce((acc, source) => {
       acc[source.type] = (acc[source.type] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
@@ -138,6 +149,15 @@ export function BundleSourceModal({ bundleId, bundleName, isOpen, onClose }: Bun
       default:
         return <AlertCircle className="h-4 w-4" />;
     }
+  };
+
+  const handleSaveChanges = () => {
+    // Since sources are already saved immediately when added/removed,
+    // we just need to notify the parent and close
+    if (hasChanges) {
+      onSourcesChanged?.();
+    }
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -162,7 +182,7 @@ export function BundleSourceModal({ bundleId, bundleName, isOpen, onClose }: Bun
         <div className="p-6 border-b bg-gray-50 dark:bg-gray-800">
           <div className="flex items-center gap-4">
             <div className="text-sm text-muted">Total Sources:</div>
-            <Badge variant="secondary">{sources.length}</Badge>
+            <Badge variant="secondary">{Array.isArray(sources) ? sources.length : 0}</Badge>
             {Object.entries(stats).map(([type, count]) => (
               <div key={type} className="flex items-center gap-1">
                 {getSourceIcon(type)}
@@ -203,7 +223,7 @@ export function BundleSourceModal({ bundleId, bundleName, isOpen, onClose }: Bun
             <Button variant="outline" onClick={onClose}>
               Close
             </Button>
-            <Button onClick={onClose}>
+            <Button onClick={handleSaveChanges} disabled={!hasChanges}>
               Save Changes
             </Button>
           </div>

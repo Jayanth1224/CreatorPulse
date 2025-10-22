@@ -19,9 +19,9 @@ import {
   deleteAutoNewsletter,
   generateAutoNewsletterNow,
   type AutoNewsletter,
-  getBundles,
 } from "@/lib/api-client";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useBundles } from "@/contexts/BundlesContext";
 
 function SettingsPageContent() {
   const [activeSection, setActiveSection] = useState<string>("account");
@@ -536,8 +536,8 @@ function SourcesSection() {
 }
 
 function AutoNewsletterSection() {
+  const { bundles, loading: bundlesLoading } = useBundles();
   const [autoNewsletters, setAutoNewsletters] = useState<AutoNewsletter[]>([]);
-  const [bundles, setBundles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newNewsletter, setNewNewsletter] = useState({
@@ -552,14 +552,10 @@ function AutoNewsletterSection() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      console.log('Loading auto-newsletters and bundles...');
+      console.log('Loading auto-newsletters...');
       try {
-        const [newslettersRes, bundlesRes] = await Promise.all([
-          listAutoNewsletters(),
-          getBundles()
-        ]);
+        const newslettersRes = await listAutoNewsletters();
         console.log('Newsletters response:', newslettersRes);
-        console.log('Bundles response:', bundlesRes);
         
         // Handle newsletters response
         if (newslettersRes.error) {
@@ -571,22 +567,8 @@ function AutoNewsletterSection() {
           console.warn('No newsletters data received');
           setAutoNewsletters([]);
         }
-        
-        // Handle bundles response
-        if (bundlesRes.error) {
-          console.error('Bundles API error:', bundlesRes.error);
-          setBundles([]);
-        } else if (bundlesRes.data) {
-          const bundlesArray = Array.isArray(bundlesRes.data) ? bundlesRes.data : [];
-          console.log('Setting bundles:', bundlesArray);
-          setBundles(bundlesArray);
-        } else {
-          console.warn('No bundles data received');
-          setBundles([]);
-        }
       } catch (error) {
         console.error('Error loading data:', error);
-        setBundles([]);
       } finally {
         setLoading(false);
       }
@@ -815,10 +797,13 @@ function AutoNewsletterSection() {
                 value={newNewsletter.bundleId}
                 onChange={(e) => setNewNewsletter({...newNewsletter, bundleId: e.target.value})}
                 className="mt-2"
+                disabled={bundlesLoading}
               >
-                <option value="">Select a bundle ({bundles.length} available)</option>
+                <option value="">
+                  {bundlesLoading ? "Loading bundles..." : `Select a bundle (${bundles.length} available)`}
+                </option>
                 {bundles.map(bundle => (
-                  <option key={bundle.id} value={bundle.id}>{bundle.label || bundle.name}</option>
+                  <option key={bundle.id} value={bundle.id}>{bundle.label}</option>
                 ))}
               </Select>
               {bundles.length === 0 && (

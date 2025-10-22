@@ -3,8 +3,10 @@ from fastapi.responses import RedirectResponse
 from app.models.analytics import AnalyticsSummary
 from app.database import get_db, SupabaseDB
 from app.utils.auth import get_current_user
+from app.services.cache_service import cache_service
 from typing import Optional
 import base64
+import asyncio
 
 router = APIRouter()
 
@@ -16,33 +18,67 @@ TRANSPARENT_GIF = base64.b64decode(
 
 @router.get("/", response_model=AnalyticsSummary)
 async def get_analytics(current_user: dict = Depends(get_current_user)):
-    """Get analytics summary for user"""
+    """Get analytics summary for user with caching"""
     try:
         user_id = current_user["id"]
+        
+        # Check cache first
+        cached_data = await cache_service.get_analytics_summary(user_id)
+        if cached_data:
+            return cached_data
+        
         db = SupabaseDB.get_service_client()  # Use service role to bypass RLS
         
-        # Get total drafts
-        drafts_response = db.table("drafts").select("id", count="exact").eq("user_id", user_id).execute()
+        # Optimized queries with better performance
+        # Get total drafts and sent drafts in parallel
+        drafts_task = asyncio.create_task(
+            asyncio.to_thread(
+                lambda: db.table("drafts")
+                .select("id,status", count="exact")
+                .eq("user_id", user_id)
+                .execute()
+            )
+        )
+        
+        sent_task = asyncio.create_task(
+            asyncio.to_thread(
+                lambda: db.table("drafts")
+                .select("id", count="exact")
+                .eq("user_id", user_id)
+                .eq("status", "sent")
+                .execute()
+            )
+        )
+        
+        # Get analytics data with optimized query
+        analytics_task = asyncio.create_task(
+            asyncio.to_thread(
+                lambda: db.table("analytics")
+                .select("opened_at,clicked_at")
+                .execute()
+            )
+        )
+        
+        # Wait for all queries to complete
+        drafts_response, sent_response, analytics_response = await asyncio.gather(
+            drafts_task, sent_task, analytics_task
+        )
+        
+        # Process results
         total_drafts = drafts_response.count or 0
-        
-        # Get total sent
-        sent_response = db.table("drafts").select("id", count="exact").eq("user_id", user_id).eq("status", "sent").execute()
         total_sent = sent_response.count or 0
+        analytics_data = analytics_response.data or []
         
-        # Get analytics data
-        analytics_response = db.table("analytics").select("*").execute()
-        analytics_data = analytics_response.data
-        
-        # Calculate metrics
+        # Calculate metrics more efficiently
         total_emails_sent = len(analytics_data)
-        total_opened = len([a for a in analytics_data if a.get("opened_at")])
-        total_clicked = len([a for a in analytics_data if a.get("clicked_at")])
+        total_opened = sum(1 for a in analytics_data if a.get("opened_at"))
+        total_clicked = sum(1 for a in analytics_data if a.get("clicked_at"))
         
         open_rate = (total_opened / total_emails_sent * 100) if total_emails_sent > 0 else 0
         click_through_rate = (total_clicked / total_emails_sent * 100) if total_emails_sent > 0 else 0
         draft_acceptance_rate = (total_sent / total_drafts * 100) if total_drafts > 0 else 0
         
-        return {
+        result = {
             "open_rate": round(open_rate, 1),
             "click_through_rate": round(click_through_rate, 1),
             "avg_review_time": 15.0,  # TODO: Track review time
@@ -50,6 +86,11 @@ async def get_analytics(current_user: dict = Depends(get_current_user)):
             "total_drafts": total_drafts,
             "total_sent": total_sent
         }
+        
+        # Cache the result for 5 minutes
+        await cache_service.set_analytics_summary(user_id, result, ttl_seconds=300)
+        
+        return result
     except Exception as e:
         print(f"[ERROR] Failed to fetch analytics: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch analytics: {str(e)}")

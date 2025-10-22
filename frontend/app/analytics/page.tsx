@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Navigation } from "@/components/layout/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -17,6 +17,8 @@ import {
   Clock,
   CheckCircle,
   Eye,
+  Loader2,
+  RefreshCw,
 } from "lucide-react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
@@ -33,46 +35,83 @@ function AnalyticsContent() {
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [timeframe, setTimeframe] = useState<"7d" | "30d">("7d");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [draftsPage, setDraftsPage] = useState(1);
+  const [hasMoreDrafts, setHasMoreDrafts] = useState(true);
 
+  // Memoized data loading function
+  const loadData = useCallback(async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    setError(null);
+    
+    try {
+      const [analyticsResponse, draftsResponse] = await Promise.all([
+        getAnalytics(),
+        getDrafts("sent", draftsPage, 10) // Limit to 10 drafts per page
+      ]);
+      
+      if (analyticsResponse.error || draftsResponse.error) {
+        setError("Failed to load analytics data");
+        return;
+      }
+      
+      if (analyticsResponse.data) {
+        const data = analyticsResponse.data;
+        // Transform snake_case to camelCase
+        setAnalytics({
+          openRate: data.open_rate,
+          clickThroughRate: data.click_through_rate,
+          avgReviewTime: data.avg_review_time,
+          draftAcceptanceRate: data.draft_acceptance_rate,
+          totalDrafts: data.total_drafts,
+          totalSent: data.total_sent,
+        });
+      }
+      
+      if (draftsResponse.data) {
+        if (draftsPage === 1) {
+          setDrafts(draftsResponse.data);
+        } else {
+          setDrafts(prev => [...prev, ...draftsResponse.data]);
+        }
+        setHasMoreDrafts(draftsResponse.data.length === 10);
+      }
+    } catch (err) {
+      setError("Failed to load analytics data");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [draftsPage]);
+
+  // Load data on mount
   useEffect(() => {
     loadData();
   }, []);
 
-  async function loadData() {
-    setLoading(true);
-    setError(null);
-    
-    const [analyticsResponse, draftsResponse] = await Promise.all([
-      getAnalytics(),
-      getDrafts("sent")
-    ]);
-    
-    if (analyticsResponse.error || draftsResponse.error) {
-      setError("Failed to load analytics data");
-      setLoading(false);
-      return;
+  // Load more drafts when page changes
+  useEffect(() => {
+    if (draftsPage > 1) {
+      loadData();
     }
-    
-    if (analyticsResponse.data) {
-      const data = analyticsResponse.data;
-      // Transform snake_case to camelCase
-      setAnalytics({
-        openRate: data.open_rate,
-        clickThroughRate: data.click_through_rate,
-        avgReviewTime: data.avg_review_time,
-        draftAcceptanceRate: data.draft_acceptance_rate,
-        totalDrafts: data.total_drafts,
-        totalSent: data.total_sent,
-      });
+  }, [draftsPage]);
+
+  const handleRefresh = useCallback(() => {
+    setDraftsPage(1);
+    setDrafts([]);
+    loadData(true);
+  }, []);
+
+  const loadMoreDrafts = useCallback(() => {
+    if (hasMoreDrafts && !loading) {
+      setDraftsPage(prev => prev + 1);
     }
-    
-    if (draftsResponse.data) {
-      setDrafts(draftsResponse.data);
-    }
-    
-    setLoading(false);
-  }
+  }, [hasMoreDrafts, loading]);
 
   if (!analytics) {
     return (
@@ -105,6 +144,19 @@ function AnalyticsContent() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              {refreshing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              Refresh
+            </Button>
             <Button
               variant={timeframe === "7d" ? "default" : "outline"}
               size="sm"
@@ -234,6 +286,20 @@ function AnalyticsContent() {
                 </tbody>
               </table>
             </div>
+            {hasMoreDrafts && (
+              <div className="flex justify-center mt-4">
+                <Button
+                  variant="outline"
+                  onClick={loadMoreDrafts}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : null}
+                  Load More Drafts
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </main>

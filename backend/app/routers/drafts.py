@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
 from datetime import datetime
 from app.models.draft import (
@@ -8,6 +8,7 @@ from app.models.draft import (
     SendDraftRequest
 )
 from app.services.draft_generator import DraftGeneratorService
+from app.services.cache_service import cache_service
 from app.database import get_db, SupabaseDB
 from app.utils.auth import get_current_user
 import uuid
@@ -38,17 +39,39 @@ async def generate_draft(request: GenerateDraftRequest, current_user: dict = Dep
 
 
 @router.get("/", response_model=List[DraftResponse])
-async def get_drafts(current_user: dict = Depends(get_current_user), status: Optional[str] = None):
-    """Get all drafts for a user"""
+async def get_drafts(
+    current_user: dict = Depends(get_current_user), 
+    status: Optional[str] = None,
+    page: int = Query(1, ge=1, description="Page number"),
+    limit: int = Query(20, ge=1, le=100, description="Items per page")
+):
+    """Get drafts for a user with pagination and caching"""
     try:
         user_id = current_user["id"]
+        
+        # Check cache first (shorter TTL for drafts)
+        cached_data = await cache_service.get_drafts_list(user_id, status)
+        if cached_data and page == 1:  # Only use cache for first page
+            return cached_data[:limit]
+        
         db = SupabaseDB.get_service_client()  # Use service role to bypass RLS
+        
+        # Calculate offset for pagination
+        offset = (page - 1) * limit
+        
+        # Build query with pagination
         query = db.table("drafts").select("*").eq("user_id", user_id)
         
         if status:
             query = query.eq("status", status)
         
-        response = query.order("created_at", desc=True).execute()
+        # Apply pagination and ordering
+        response = query.order("created_at", desc=True).range(offset, offset + limit - 1).execute()
+        
+        # Cache first page for 1 minute
+        if page == 1:
+            await cache_service.set_drafts_list(user_id, response.data, status, ttl_seconds=60)
+        
         return response.data
     except Exception as e:
         print(f"[ERROR] Failed to fetch drafts: {str(e)}")

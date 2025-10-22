@@ -152,9 +152,14 @@ export async function getBundle(bundleId: string) {
 
 // ============= Drafts API =============
 
-export async function getDrafts(status?: string) {
-  const params = status ? `?status=${status}` : '';
-  return await apiRequest(`/api/drafts/${params}`);
+export async function getDrafts(status?: string, page?: number, limit?: number) {
+  const params = new URLSearchParams();
+  if (status) params.append('status', status);
+  if (page) params.append('page', page.toString());
+  if (limit) params.append('limit', limit.toString());
+  
+  const queryString = params.toString();
+  return await apiRequest(`/api/drafts/${queryString ? `?${queryString}` : ''}`);
 }
 
 export async function getDraft(draftId: string) {

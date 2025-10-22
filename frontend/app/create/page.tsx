@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { getBundles, generateDraft } from "@/lib/api-client";
+import { generateDraft } from "@/lib/api-client";
 import { tonePresets } from "@/lib/mock-data";
-import { Bundle } from "@/types";
 import { Loader2, Sparkles } from "lucide-react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useBundles } from "@/contexts/BundlesContext";
 
 export default function CreatePage() {
   return (
@@ -24,23 +24,12 @@ export default function CreatePage() {
 
 function CreateContent() {
   const router = useRouter();
-  const [bundles, setBundles] = useState<Bundle[]>([]);
+  const { bundles, loading: bundlesLoading, error: bundlesError } = useBundles();
   const [selectedBundle, setSelectedBundle] = useState("");
   const [topic, setTopic] = useState("");
   const [tone, setTone] = useState("professional");
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    loadBundles();
-  }, []);
-
-  async function loadBundles() {
-    const response = await getBundles();
-    if (response.data) {
-      setBundles(response.data);
-    }
-  }
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,8 +89,11 @@ function CreateContent() {
                     value={selectedBundle}
                     onChange={(e) => setSelectedBundle(e.target.value)}
                     className="mt-2"
+                    disabled={bundlesLoading}
                   >
-                    <option value="">Choose a bundle...</option>
+                    <option value="">
+                      {bundlesLoading ? "Loading bundles..." : "Choose a bundle..."}
+                    </option>
                     <optgroup label="✨ Preset Bundles">
                       {bundles
                         .filter((b) => b.isPreset)

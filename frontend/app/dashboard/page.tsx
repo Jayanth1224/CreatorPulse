@@ -13,9 +13,9 @@ import { FileEdit, RefreshCw, Send, Clock, CheckCircle2, Rss, Twitter, Youtube, 
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { BundleSourceModal } from "@/components/BundleSourceModal";
 import { CreateBundleModal } from "@/components/CreateBundleModal";
-import { getBundles } from "@/lib/api-client";
+import { useBundles } from "@/contexts/BundlesContext";
 
-type TabType = "all" | "sent" | "scheduled" | "bundles";
+type TabType = "all" | "sent" | "bundles";
 
 export default function DashboardPage() {
   return (
@@ -72,7 +72,6 @@ function DashboardContent() {
   const filteredDrafts = drafts.filter((draft) => {
     if (activeTab === "all") return true;
     if (activeTab === "sent") return draft.status === "sent";
-    if (activeTab === "scheduled") return draft.status === "scheduled";
     return false;
   });
 
@@ -100,12 +99,6 @@ function DashboardContent() {
             onClick={() => setActiveTab("sent")}
           >
             Sent
-          </TabButton>
-          <TabButton
-            active={activeTab === "scheduled"}
-            onClick={() => setActiveTab("scheduled")}
-          >
-            Scheduled
           </TabButton>
           <TabButton
             active={activeTab === "bundles"}
@@ -199,14 +192,9 @@ function DraftCard({ draft }: { draft: Draft }) {
       label: "Sent",
       variant: "success" as const,
     },
-    scheduled: {
-      icon: <Clock className="h-4 w-4" />,
-      label: "Scheduled",
-      variant: "warning" as const,
-    },
   };
 
-  const status = statusConfig[draft.status];
+  const status = statusConfig[draft.status as keyof typeof statusConfig] || statusConfig.draft;
 
   return (
     <Card className="p-6 hover:border-primary/50 transition-colors">
@@ -263,37 +251,10 @@ function DraftCard({ draft }: { draft: Draft }) {
 }
 
 function BundlesSection() {
-  const [bundles, setBundles] = useState<Bundle[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { bundles, loading, error, refreshBundles } = useBundles();
   const [selectedBundle, setSelectedBundle] = useState<Bundle | null>(null);
   const [showSourceModal, setShowSourceModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-
-  useEffect(() => {
-    loadBundles();
-  }, []);
-
-  async function loadBundles() {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await getBundles();
-      if (response.error) {
-        setError(response.error.detail || "Failed to load bundles");
-        setBundles([]);
-      } else {
-        setBundles(Array.isArray(response.data) ? response.data : []);
-      }
-    } catch (err) {
-      setError("Failed to load bundles");
-      console.error("Error loading bundles:", err);
-      setBundles([]);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   const handleManageSources = (bundle: Bundle) => {
     setSelectedBundle(bundle);
@@ -303,8 +264,8 @@ function BundlesSection() {
   const handleCreateBundle = async (bundleData: { key: string; label: string; description: string }) => {
     // TODO: Implement API call to create bundle
     console.log("Creating bundle:", bundleData);
-    // For now, just reload bundles
-    await loadBundles();
+    // For now, just refresh bundles
+    await refreshBundles();
   };
 
   const getSourceStats = (bundle: Bundle) => {
@@ -357,7 +318,7 @@ function BundlesSection() {
       <Card className="p-12 text-center border-destructive">
         <h3 className="text-lg font-semibold mb-2 text-destructive">Error Loading Bundles</h3>
         <p className="text-muted mb-6">{error}</p>
-        <Button onClick={loadBundles}>Retry</Button>
+        <Button onClick={refreshBundles}>Retry</Button>
       </Card>
     );
   }
@@ -447,6 +408,10 @@ function BundlesSection() {
           onClose={() => {
             setShowSourceModal(false);
             setSelectedBundle(null);
+          }}
+          onSourcesChanged={() => {
+            // Refresh bundles data when sources are changed
+            refreshBundles();
           }}
         />
       )}

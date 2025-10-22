@@ -170,8 +170,20 @@ async def get_bundle_sources(bundle_id: str):
         
         # Get sources
         sources_response = db.table("sources").select("*").eq("bundle_id", bundle_id).execute()
+        sources = sources_response.data or []
         
-        return sources_response.data
+        # Convert sources to the expected format
+        formatted_sources = []
+        for source in sources:
+            formatted_sources.append({
+                "id": source["id"],
+                "type": source["type"],
+                "value": source["source_identifier"],
+                "label": source.get("label"),
+                "metadata": source.get("metadata", {})
+            })
+        
+        return formatted_sources
         
     except HTTPException:
         raise

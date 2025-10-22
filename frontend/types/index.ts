@@ -34,7 +34,7 @@ export interface Draft {
   tone: "professional" | "conversational" | "analytical" | "friendly";
   generatedHtml: string;
   editedHtml?: string;
-  status: "draft" | "sent" | "scheduled";
+  status: "draft" | "sent";
   readinessScore?: number;
   sources: string[];
   createdAt: Date | null;

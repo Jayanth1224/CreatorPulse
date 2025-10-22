@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.routers import drafts, bundles, analytics, auth, linkedin
+from app.routers import drafts, bundles, analytics, auth, linkedin, performance
 from app.routers import auto_newsletter, advanced_auto_newsletter
 
 app = FastAPI(
@@ -25,6 +25,7 @@ app.include_router(bundles.router, prefix="/api/bundles", tags=["Bundles"])
 app.include_router(drafts.router, prefix="/api/drafts", tags=["Drafts"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics"])
 app.include_router(linkedin.router, prefix="/api/linkedin", tags=["LinkedIn"])
+app.include_router(performance.router, prefix="/api/performance", tags=["Performance"])
 # Email test router removed - functionality integrated into main email service
 # Auto-newsletters router already includes its own /api/auto-newsletters prefix
 app.include_router(auto_newsletter.router)

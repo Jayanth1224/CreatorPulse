@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { BundlesProvider } from "@/contexts/BundlesContext";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -26,7 +27,9 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <AuthProvider>
-          {children}
+          <BundlesProvider>
+            {children}
+          </BundlesProvider>
         </AuthProvider>
       </body>
     </html>
