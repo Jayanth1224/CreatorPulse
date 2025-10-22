@@ -2,6 +2,8 @@ from typing import Dict
 from datetime import datetime
 from app.services.rss_service import RSSService
 from app.services.ai_service import AIService
+from app.services.email_template_service import EmailTemplateService
+from app.services.content_extractor_service import ContentExtractorService
 from app.routers.bundles import PRESET_BUNDLES
 import uuid
 
@@ -12,6 +14,8 @@ class DraftGeneratorService:
     def __init__(self):
         self.rss_service = RSSService()
         self.ai_service = AIService()
+        self.email_template_service = EmailTemplateService()
+        self.content_extractor = ContentExtractorService()
     
     async def generate_draft(
         self,
@@ -42,31 +46,49 @@ class DraftGeneratorService:
         
         # 4. Generate draft using AI
         print(f"[GENERATOR] Step 4: Generating draft with Openrouter API")
-        generated_html = await self.ai_service.generate_newsletter_draft(
+        ai_generated_html = await self.ai_service.generate_newsletter_draft(
             entries=scored_entries,
             tone=tone,
             topic=topic,
             bundle_name=bundle["label"]
         )
-        print(f"[GENERATOR] Draft generated successfully")
+        print(f"[GENERATOR] AI draft generated successfully")
         
-        # 5. Calculate readiness score
+        # 5. Generate professional email template
+        print(f"[GENERATOR] Step 5: Generating professional email template")
+        bundle_color = bundle.get("color", "#3B82F6")
+        full_email_html = self.email_template_service.generate_newsletter_html(
+            draft_content=ai_generated_html,
+            bundle_name=bundle["label"],
+            bundle_color=bundle_color,
+            entries=scored_entries[:10],
+            include_images=True
+        )
+        print(f"[GENERATOR] Email template generated successfully")
+        
+        # 6. Use original AI-generated content for editing (don't extract from template)
+        print(f"[GENERATOR] Step 6: Using original AI content for editing")
+        editable_content = ai_generated_html  # Use the original AI content directly
+        print(f"[GENERATOR] Using original AI content for editor")
+        
+        # 7. Calculate readiness score
         readiness_score = self._calculate_readiness_score(
-            generated_html,
+            full_email_html,
             len(scored_entries)
         )
         
-        # 6. Extract source links
+        # 8. Extract source links
         source_links = [entry["link"] for entry in scored_entries[:10] if entry.get("link")]
         
-        # 7. Create draft object
+        # 9. Create draft object
         draft_data = {
             "user_id": user_id,
             "bundle_id": bundle_id,
             "bundle_name": bundle["label"],
             "topic": topic,
             "tone": tone,
-            "generated_html": generated_html,
+            "generated_html": editable_content,  # Store editable content for editor
+            "full_email_html": full_email_html,  # Store full template for sending
             "edited_html": None,
             "status": "draft",
             "readiness_score": readiness_score,

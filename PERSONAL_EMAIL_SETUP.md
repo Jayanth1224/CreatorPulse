@@ -92,3 +92,5 @@ When you're ready for real newsletters:
 **Emails go to spam:**
 - This is normal with personal SMTP
 - For production, use professional ESP (SendGrid/Mailgun)
+
+

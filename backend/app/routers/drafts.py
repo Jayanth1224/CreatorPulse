@@ -127,7 +127,7 @@ async def delete_draft(draft_id: str, current_user: dict = Depends(get_current_u
 
 @router.post("/{draft_id}/send")
 async def send_draft(draft_id: str, request: SendDraftRequest, current_user: dict = Depends(get_current_user)):
-    """Send a draft via email"""
+    """Send a draft via email using professional template"""
     try:
         user_id = current_user["id"]
         db = SupabaseDB.get_service_client()  # Use service role to bypass RLS
@@ -139,19 +139,16 @@ async def send_draft(draft_id: str, request: SendDraftRequest, current_user: dic
         
         draft = draft_response.data[0]
         
-        # Send email using email service
+        # Send email using new template system
         from app.services.email_service import EmailService
         email_service = EmailService()
         
-        # Use edited_html if available, otherwise use generated_html
-        html_content = draft.get("edited_html") or draft.get("generated_html")
-        subject = draft.get("topic") or draft.get("bundle_name", "Newsletter")
-        
-        send_result = await email_service.send_newsletter(
+        send_result = await email_service.send_newsletter_from_draft(
+            draft_id=draft_id,
             recipients=request.recipients,
-            subject=subject,
-            html_content=html_content,
-            draft_id=draft_id
+            custom_subject=request.subject,
+            custom_bundle_color=request.bundle_color,
+            use_sendgrid=True
         )
         
         if send_result.get("success"):
@@ -188,6 +185,80 @@ async def send_draft(draft_id: str, request: SendDraftRequest, current_user: dic
     except Exception as e:
         print(f"[ERROR] Failed to send draft: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to send draft: {str(e)}")
+
+
+@router.get("/{draft_id}/preview")
+async def get_draft_preview(draft_id: str, current_user: dict = Depends(get_current_user), bundle_color: Optional[str] = None):
+    """Get preview of draft as rendered email"""
+    try:
+        user_id = current_user["id"]
+        db = SupabaseDB.get_service_client()  # Use service role to bypass RLS
+        
+        # Verify draft belongs to user
+        draft_response = db.table("drafts").select("*").eq("id", draft_id).eq("user_id", user_id).execute()
+        if not draft_response.data:
+            raise HTTPException(status_code=404, detail="Draft not found")
+        
+        # Get preview using email service
+        from app.services.email_service import EmailService
+        email_service = EmailService()
+        
+        preview = await email_service.get_draft_preview(
+            draft_id=draft_id,
+            custom_bundle_color=bundle_color
+        )
+        
+        return preview
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Failed to get draft preview: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get draft preview: {str(e)}")
+
+
+@router.post("/{draft_id}/send-test")
+async def send_test_email(draft_id: str, recipient: str, current_user: dict = Depends(get_current_user)):
+    """Send test email of draft"""
+    try:
+        user_id = current_user["id"]
+        db = SupabaseDB.get_service_client()  # Use service role to bypass RLS
+        
+        # Verify draft belongs to user
+        draft_response = db.table("drafts").select("*").eq("id", draft_id).eq("user_id", user_id).execute()
+        if not draft_response.data:
+            raise HTTPException(status_code=404, detail="Draft not found")
+        
+        draft = draft_response.data[0]
+        
+        # Send test email using new template system
+        from app.services.email_service import EmailService
+        email_service = EmailService()
+        
+        # Get preview content
+        preview = await email_service.get_draft_preview(
+            draft_id=draft_id,
+            custom_bundle_color=None
+        )
+        
+        send_result = await email_service.send_test_email(
+            recipient=recipient,
+            html_content=preview["html_content"],
+            subject=f"Test: {preview['bundle_name']} Newsletter",
+            bundle_name=preview["bundle_name"],
+            bundle_color=preview["bundle_color"]
+        )
+        
+        return {
+            "success": True,
+            "message": "Test email sent successfully",
+            "recipient": recipient,
+            "method": send_result.get("method", "unknown")
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Failed to send test email: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to send test email: {str(e)}")
 
 
 @router.post("/{draft_id}/regenerate")

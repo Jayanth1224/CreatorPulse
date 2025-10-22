@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { getDraft, updateDraft, sendDraft, regenerateSection, saveFeedback } from "@/lib/api-client";
+import { supabase } from "@/lib/supabase-client";
 import { Draft } from "@/types";
 import {
   Save,
@@ -19,6 +20,8 @@ import {
   Undo2,
   Loader2,
   Check,
+  Eye,
+  X,
 } from "lucide-react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
@@ -44,6 +47,8 @@ function EditorContent() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [recipients, setRecipients] = useState("");
+  const [previewMode, setPreviewMode] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState("");
   
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
@@ -196,6 +201,47 @@ function EditorContent() {
     await saveContent(content);
   };
 
+  const handlePreview = async () => {
+    if (!draftId) return;
+    
+    try {
+      // Get the Supabase session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        alert('Please log in to preview drafts');
+        return;
+      }
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/drafts/${draftId}/preview`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+      
+      if (response.ok) {
+        const previewData = await response.json();
+        // Remove clickable links from preview content
+        const processedHtml = previewData.html_content
+          .replace(/<a[^>]*>/gi, '<span style="color: #666; text-decoration: none; cursor: default;">')
+          .replace(/<\/a>/gi, '</span>');
+        setPreviewHtml(processedHtml);
+        setPreviewMode(true);
+      } else {
+        const errorData = await response.json();
+        console.error('Preview error:', errorData);
+        alert(`Failed to load preview: ${errorData.detail || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Preview error:', error);
+      alert('Failed to load preview');
+    }
+  };
+
+  const handleClosePreview = () => {
+    setPreviewMode(false);
+    setPreviewHtml("");
+  };
+
   if (error) {
     return (
       <>
@@ -258,6 +304,15 @@ function EditorContent() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handlePreview}
+              title="Preview newsletter"
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              Preview
+            </Button>
             <Button 
               variant="outline" 
               size="sm"
@@ -468,6 +523,43 @@ function EditorContent() {
           </div>
         </div>
       </main>
+
+      {/* Preview Modal */}
+      {previewMode && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b bg-gray-50">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClosePreview}
+                  className="flex items-center gap-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to Editor
+                </Button>
+                <h3 className="text-lg font-semibold text-gray-700">Newsletter Preview</h3>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleClosePreview}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="overflow-auto max-h-[calc(90vh-80px)]">
+              <iframe
+                srcDoc={previewHtml}
+                className="w-full h-[600px] border-0"
+                title="Newsletter Preview"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

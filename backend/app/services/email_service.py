@@ -2,6 +2,7 @@ from typing import List, Optional
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, TrackingSettings, ClickTracking, OpenTracking
 from app.config import settings
+from app.services.email_renderer_service import EmailRendererService
 import hashlib
 import smtplib
 from email.mime.text import MIMEText
@@ -20,6 +21,7 @@ class EmailService:
         self.smtp_password = getattr(settings, 'smtp_password', None) or ""
         self.from_email = getattr(settings, 'from_email', 'noreply@creatorpulse.com')
         self.from_name = getattr(settings, 'from_name', 'CreatorPulse')
+        self.renderer_service = EmailRendererService()
     
     async def send_newsletter(
         self,
@@ -172,3 +174,14 @@ class EmailService:
                 "message": "Test email simulated (no email provider configured)",
                 "method": "simulated"
             }
+    
+    async def get_draft_preview(
+        self,
+        draft_id: str,
+        custom_bundle_color: str = None
+    ) -> dict:
+        """Get preview of draft as rendered email"""
+        return await self.renderer_service.render_preview(
+            draft_id=draft_id,
+            custom_bundle_color=custom_bundle_color
+        )
