@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { getDrafts } from "@/lib/api-client";
 import { formatDateTime } from "@/lib/utils";
 import { Draft, Bundle } from "@/types";
-import { FileEdit, RefreshCw, Send, Clock, CheckCircle2, Rss, Twitter, Youtube, Settings } from "lucide-react";
+import { FileEdit, Clock, CheckCircle2, Rss, Twitter, Youtube, Settings } from "lucide-react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { BundleSourceModal } from "@/components/BundleSourceModal";
 import { CreateBundleModal } from "@/components/CreateBundleModal";
@@ -232,18 +232,6 @@ function DraftCard({ draft }: { draft: Draft }) {
               {draft.status === "draft" ? "Edit" : "View"}
             </Button>
           </Link>
-          {draft.status === "draft" && (
-            <>
-              <Button variant="outline" size="sm" className="flex-1 lg:flex-initial">
-                <RefreshCw className="h-4 w-4" />
-                Regenerate
-              </Button>
-              <Button variant="ghost" size="sm" className="flex-1 lg:flex-initial">
-                <Send className="h-4 w-4" />
-                Send
-              </Button>
-            </>
-          )}
         </div>
       </div>
     </Card>

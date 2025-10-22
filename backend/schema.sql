@@ -57,7 +57,11 @@ CREATE TABLE IF NOT EXISTS drafts (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     sent_at TIMESTAMP WITH TIME ZONE,
-    scheduled_for TIMESTAMP WITH TIME ZONE
+    scheduled_for TIMESTAMP WITH TIME ZONE,
+    -- Voice training columns
+    voice_training_used BOOLEAN DEFAULT FALSE,
+    voice_samples_count INTEGER DEFAULT 0,
+    generation_metadata JSONB DEFAULT NULL
 );
 
 -- Auto Newsletters table (Supabase-backed)

@@ -313,25 +313,4 @@ async def regenerate_section(draft_id: str, section: str = "intro", current_user
     }
 
 
-@router.post("/{draft_id}/reactions")
-async def save_reaction(draft_id: str, section_id: str = None, reaction: str = "thumbs_up", current_user: dict = Depends(get_current_user)):
-    """Save user feedback reaction"""
-    try:
-        user_id = current_user["id"]
-        db = SupabaseDB.get_service_client()  # Use service role to bypass RLS
-        
-        db.table("feedback").insert({
-            "draft_id": draft_id,
-            "section_id": section_id,
-            "reaction": reaction,
-            "user_id": user_id
-        }).execute()
-        
-        return {
-            "success": True,
-            "message": "Feedback saved"
-        }
-    except Exception as e:
-        print(f"[ERROR] Failed to save reaction: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to save reaction: {str(e)}")
 

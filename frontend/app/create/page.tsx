@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Navigation } from "@/components/layout/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { tonePresets } from "@/lib/mock-data";
 import { Loader2, Sparkles } from "lucide-react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useBundles } from "@/contexts/BundlesContext";
+import { VoiceTrainingStatus } from "@/components/VoiceTrainingStatus";
 
 export default function CreatePage() {
   return (
@@ -24,6 +25,7 @@ export default function CreatePage() {
 
 function CreateContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { bundles, loading: bundlesLoading, error: bundlesError } = useBundles();
   const [selectedBundle, setSelectedBundle] = useState("");
   const [topic, setTopic] = useState("");
@@ -58,6 +60,14 @@ function CreateContent() {
       setIsGenerating(false);
     }
   };
+
+  // Handle bundle parameter from URL
+  useEffect(() => {
+    const bundleParam = searchParams.get('bundle');
+    if (bundleParam && bundles.length > 0) {
+      setSelectedBundle(bundleParam);
+    }
+  }, [searchParams, bundles]);
 
   const selectedBundleData = bundles.find((b) => b.id === selectedBundle);
 
@@ -198,6 +208,12 @@ function CreateContent() {
                     )}
                   </p>
                 </div>
+
+                {/* Voice Training Status */}
+                <VoiceTrainingStatus 
+                  tone={tone}
+                  className="mt-4"
+                />
               </form>
             </CardContent>
           </Card>

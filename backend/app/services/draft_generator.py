@@ -4,6 +4,7 @@ from app.services.rss_service import RSSService
 from app.services.ai_service import AIService
 from app.services.email_template_service import EmailTemplateService
 from app.services.content_extractor_service import ContentExtractorService
+from app.services.voice_training_service import VoiceTrainingService
 from app.routers.bundles import PRESET_BUNDLES
 import uuid
 
@@ -16,6 +17,7 @@ class DraftGeneratorService:
         self.ai_service = AIService()
         self.email_template_service = EmailTemplateService()
         self.content_extractor = ContentExtractorService()
+        self.voice_training_service = VoiceTrainingService()
     
     async def generate_draft(
         self,
@@ -44,18 +46,24 @@ class DraftGeneratorService:
         scored_entries = self.rss_service.score_entries(recent_entries, topic)
         print(f"[GENERATOR] Using {len(scored_entries)} scored entries")
         
-        # 4. Generate draft using AI
-        print(f"[GENERATOR] Step 4: Generating draft with Openrouter API")
+        # 4. Get user's voice training samples (NEW)
+        print(f"[GENERATOR] Step 4: Getting voice training samples for user {user_id}")
+        voice_samples = self.voice_training_service.get_voice_samples_for_training(user_id)
+        print(f"[GENERATOR] Found {len(voice_samples)} voice training samples")
+        
+        # 5. Generate draft using AI with voice training
+        print(f"[GENERATOR] Step 5: Generating draft with Openrouter API")
         ai_generated_html = await self.ai_service.generate_newsletter_draft(
             entries=scored_entries,
             tone=tone,
             topic=topic,
-            bundle_name=bundle["label"]
+            bundle_name=bundle["label"],
+            voice_samples=voice_samples
         )
         print(f"[GENERATOR] AI draft generated successfully")
         
-        # 5. Generate professional email template with new structure
-        print(f"[GENERATOR] Step 5: Generating professional email template with separated content")
+        # 6. Generate professional email template with new structure
+        print(f"[GENERATOR] Step 6: Generating professional email template with separated content")
         bundle_color = bundle.get("color", "#3B82F6")
         full_email_html = self.email_template_service.generate_newsletter_html(
             draft_content=ai_generated_html,
@@ -66,21 +74,22 @@ class DraftGeneratorService:
         )
         print(f"[GENERATOR] Email template with new structure generated successfully")
         
-        # 6. Use original AI-generated content for editing (don't extract from template)
-        print(f"[GENERATOR] Step 6: Using original AI content for editing")
+        # 7. Use original AI-generated content for editing (don't extract from template)
+        print(f"[GENERATOR] Step 7: Using original AI content for editing")
         editable_content = ai_generated_html  # Use the original AI content directly
         print(f"[GENERATOR] Using original AI content for editor")
         
-        # 7. Calculate readiness score
+        # 8. Calculate readiness score
         readiness_score = self._calculate_readiness_score(
             full_email_html,
             len(scored_entries)
         )
         
-        # 8. Extract source links
+        # 9. Extract source links
         source_links = [entry["link"] for entry in scored_entries[:10] if entry.get("link")]
         
-        # 9. Create draft object
+        # 10. Create draft object with voice training metadata
+        voice_training_active = len(voice_samples) >= 3
         draft_data = {
             "user_id": user_id,
             "bundle_id": bundle_id,
@@ -92,7 +101,16 @@ class DraftGeneratorService:
             "edited_html": None,
             "status": "draft",
             "readiness_score": readiness_score,
-            "sources": source_links
+            "sources": source_links,
+            # Voice training metadata
+            "voice_training_used": voice_training_active,
+            "voice_samples_count": len(voice_samples),
+            "generation_metadata": {
+                "voice_training_active": voice_training_active,
+                "samples_used": len(voice_samples),
+                "tone_preset": tone,
+                "voice_samples_titles": [sample.get('title', 'Untitled') for sample in voice_samples[:3]]
+            }
         }
         
         # 8. Save to Supabase database
@@ -109,8 +127,49 @@ class DraftGeneratorService:
         return saved_draft
     
     def _get_bundle(self, bundle_id: str) -> Dict:
-        """Get bundle by ID"""
-        return next((b for b in PRESET_BUNDLES if b["id"] == bundle_id), None)
+        """Get bundle by ID with its sources from database"""
+        try:
+            from app.database import SupabaseDB
+            db = SupabaseDB.get_service_client()
+            
+            # Get bundle from database
+            bundle_response = db.table("bundles").select("*").eq("id", bundle_id).execute()
+            if not bundle_response.data:
+                print(f"[GENERATOR] Bundle {bundle_id} not found in database")
+                return None
+            
+            bundle = bundle_response.data[0]
+            print(f"[GENERATOR] Found bundle: {bundle['label']}")
+            
+            # Get sources for this bundle
+            sources_response = db.table("sources").select("*").eq("bundle_id", bundle_id).execute()
+            sources = sources_response.data or []
+            print(f"[GENERATOR] Found {len(sources)} sources for bundle")
+            
+            # Convert sources to the format expected by RSS service
+            source_urls = []
+            for source in sources:
+                if source["type"] == "rss" and source["source_identifier"]:
+                    source_urls.append(source["source_identifier"])
+                    print(f"[GENERATOR] Added RSS source: {source['source_identifier']}")
+            
+            # If no custom sources found, fall back to preset sources
+            if not source_urls and bundle.get("sources"):
+                # Handle JSONB sources from preset bundles
+                preset_sources = bundle.get("sources", [])
+                if isinstance(preset_sources, list):
+                    source_urls = [s for s in preset_sources if isinstance(s, str)]
+                    print(f"[GENERATOR] Using preset sources: {source_urls}")
+            
+            bundle["sources"] = source_urls
+            print(f"[GENERATOR] Final sources for bundle: {source_urls}")
+            
+            return bundle
+            
+        except Exception as e:
+            print(f"[ERROR] Failed to get bundle {bundle_id}: {str(e)}")
+            # Fallback to PRESET_BUNDLES for backward compatibility
+            return next((b for b in PRESET_BUNDLES if b["id"] == bundle_id), None)
     
     def _calculate_readiness_score(self, html_content: str, num_sources: int) -> int:
         """Calculate how ready the draft is (0-100)"""

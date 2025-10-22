@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional, List, Literal
+from typing import Optional, List, Literal, Dict, Any
 
 
 ToneType = Literal["professional", "conversational", "analytical", "friendly"]
@@ -66,6 +66,10 @@ class DraftResponse(BaseModel):
     updated_at: datetime
     sent_at: Optional[datetime]
     scheduled_for: Optional[datetime]
+    # Voice training metadata
+    voice_training_used: Optional[bool] = False
+    voice_samples_count: Optional[int] = 0
+    generation_metadata: Optional[Dict[str, Any]] = None
 
 
 class SendDraftRequest(BaseModel):

@@ -18,12 +18,13 @@ class AIService:
         entries: List[Dict],
         tone: str = "professional",
         topic: str = None,
-        bundle_name: str = "Tech News"
+        bundle_name: str = "Tech News",
+        voice_samples: List[Dict] = None
     ) -> str:
         """Generate a newsletter draft from RSS entries"""
         
-        # Build system prompt
-        system_prompt = self._build_system_prompt(tone)
+        # Build system prompt with optional voice training
+        system_prompt = self._build_system_prompt(tone, voice_samples)
         
         # Build user prompt with entries
         user_prompt = self._build_user_prompt(entries, topic, bundle_name)
@@ -57,11 +58,13 @@ class AIService:
         section_type: str,
         current_content: str,
         entries: List[Dict],
-        tone: str = "professional"
+        tone: str = "professional",
+        voice_samples: List[Dict] = None
     ) -> str:
         """Regenerate a specific section of the newsletter"""
         
-        system_prompt = f"You are a newsletter writer with a {tone} tone. Regenerate only the {section_type} section."
+        system_prompt = self._build_system_prompt(tone, voice_samples)
+        system_prompt += f"\n\nRegenerate only the {section_type} section of the newsletter."
         
         user_prompt = f"""
 Current {section_type} section:
@@ -90,8 +93,8 @@ Generate a new, different version of the {section_type} section. Keep it concise
             print(f"Error regenerating section: {str(e)}")
             return current_content
     
-    def _build_system_prompt(self, tone: str) -> str:
-        """Build system prompt based on tone"""
+    def _build_system_prompt(self, tone: str, voice_samples: List[Dict] = None) -> str:
+        """Build system prompt based on tone and optional voice training samples"""
         tone_descriptions = {
             "professional": "formal, authoritative, and business-oriented",
             "conversational": "casual, friendly, and approachable",
@@ -101,8 +104,15 @@ Generate a new, different version of the {section_type} section. Keep it concise
         
         tone_desc = tone_descriptions.get(tone, "professional and informative")
         
-        return f"""You are an expert newsletter writer specializing in curating and summarizing content. 
-Your writing style is {tone_desc}.
+        base_prompt = f"""You are an expert newsletter writer specializing in curating and summarizing content. 
+Your writing style is {tone_desc}."""
+        
+        # Add voice training examples if available
+        if voice_samples and len(voice_samples) >= 3:
+            voice_examples = self._build_voice_examples_section(voice_samples)
+            base_prompt += f"\n\n{voice_examples}"
+        
+        base_prompt += """
 
 Generate a well-structured newsletter draft with:
 1. An engaging intro paragraph (2-3 sentences)
@@ -112,6 +122,33 @@ Generate a well-structured newsletter draft with:
 
 Format the output as clean HTML using <div>, <h2>, <h3>, <p>, and <ul>/<li> tags.
 Use class names: draft-intro, draft-insight, draft-trends."""
+        
+        return base_prompt
+    
+    def _build_voice_examples_section(self, voice_samples: List[Dict]) -> str:
+        """Build voice training examples section for system prompt"""
+        
+        # Take the best 3-5 samples (most recent and diverse)
+        selected_samples = voice_samples[:5]
+        
+        examples_text = "Here are examples of my writing style to match:\n\n"
+        
+        for i, sample in enumerate(selected_samples, 1):
+            # Truncate long samples to keep prompt manageable (max 800 chars per sample)
+            content = sample.get('content', '')
+            if len(content) > 800:
+                content = content[:800] + "..."
+            
+            title = sample.get('title', f'Example {i}')
+            examples_text += f"Example {i} ({title}):\n{content}\n\n"
+        
+        examples_text += "Match this writing style, tone, voice, and approach in your newsletter generation. Pay attention to:\n"
+        examples_text += "- Sentence structure and flow\n"
+        examples_text += "- Vocabulary choices and tone\n"
+        examples_text += "- How ideas are introduced and connected\n"
+        examples_text += "- Overall writing personality and voice"
+        
+        return examples_text
     
     def _build_user_prompt(self, entries: List[Dict], topic: str, bundle_name: str) -> str:
         """Build user prompt with RSS entries"""

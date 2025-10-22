@@ -11,7 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { tonePresets } from "@/lib/mock-data";
 import { Check, Mail, AlertCircle, Upload, Clock, Calendar, Settings, Plus, Trash2, Play } from "lucide-react";
 import { SourceManager } from "@/components/SourceManager";
+import { VoiceTrainingSection } from "@/components/VoiceTrainingSection";
 import { Source } from "@/types";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   listAutoNewsletters,
   createAutoNewsletter,
@@ -68,7 +70,7 @@ function SettingsPageContent() {
               active={activeSection === "sources"}
               onClick={() => setActiveSection("sources")}
             >
-              Content Sources
+              Source Library
             </NavButton>
             <NavButton
               active={activeSection === "auto-newsletter"}
@@ -132,6 +134,8 @@ function NavButton({
 }
 
 function AccountSection() {
+  const { user } = useAuth();
+  
   return (
     <Card>
       <CardHeader>
@@ -145,7 +149,7 @@ function AccountSection() {
           <Label htmlFor="name">Full Name</Label>
           <Input
             id="name"
-            defaultValue="Jayanth Bandi"
+            defaultValue={user?.user_metadata?.full_name || user?.email?.split('@')[0] || "User"}
             className="mt-2"
           />
         </div>
@@ -154,9 +158,13 @@ function AccountSection() {
           <Input
             id="email"
             type="email"
-            defaultValue="jayanth@example.com"
-            className="mt-2"
+            value={user?.email || ""}
+            disabled
+            className="mt-2 bg-muted"
           />
+          <p className="text-xs text-muted mt-1">
+            Email address cannot be changed as it's tied to your authentication
+          </p>
         </div>
         <div>
           <Label htmlFor="timezone">Timezone</Label>
@@ -385,37 +393,7 @@ function ToneSection() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Voice Training</CardTitle>
-          <CardDescription>
-            Upload samples of your writing to train a custom voice model
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
-            <Upload className="h-8 w-8 text-muted mx-auto mb-3" />
-            <p className="font-medium mb-1">Upload Writing Samples</p>
-            <p className="text-xs text-muted mb-3">
-              Upload at least 20 examples of your best newsletters or articles
-            </p>
-            <Button variant="outline" size="sm">
-              Choose Files
-            </Button>
-          </div>
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">
-                Pro Feature
-              </p>
-              <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
-                Voice training is available on the Pro plan. Upgrade to create a custom voice model.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <VoiceTrainingSection />
     </div>
   );
 }
@@ -519,9 +497,9 @@ function SourcesSection() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Content Sources</CardTitle>
+        <CardTitle>Source Library</CardTitle>
         <CardDescription>
-          Manage your RSS feeds, Twitter handles, and YouTube channels for content aggregation
+          Manage your master library of RSS feeds, Twitter handles, and YouTube channels
         </CardDescription>
       </CardHeader>
       <CardContent>

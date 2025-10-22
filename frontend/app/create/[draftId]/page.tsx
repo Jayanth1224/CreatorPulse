@@ -10,12 +10,12 @@ import { Badge } from "@/components/ui/badge";
 import { getDraft, updateDraft, sendDraft } from "@/lib/api-client";
 import { supabase } from "@/lib/supabase-client";
 import { Draft } from "@/types";
+import { SectionEditor } from "@/components/SectionEditor";
+import { NewsletterSection, parseNewsletterSections, reassembleNewsletterSections } from "@/lib/newsletter-parser";
 import {
   Save,
   Send,
   ArrowLeft,
-  ThumbsUp,
-  ThumbsDown,
   Undo2,
   Loader2,
   Check,
@@ -23,6 +23,7 @@ import {
   X,
 } from "lucide-react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { VoiceTrainingStatus } from "@/components/VoiceTrainingStatus";
 
 export default function EditorPage() {
   return (
@@ -48,10 +49,9 @@ function EditorContent() {
   const [recipients, setRecipients] = useState("");
   const [previewMode, setPreviewMode] = useState(false);
   const [previewHtml, setPreviewHtml] = useState("");
+  const [sections, setSections] = useState<NewsletterSection[]>([]);
   
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const editorRef = useRef<HTMLDivElement>(null);
-  const isUserEditingRef = useRef(false);
 
   useEffect(() => {
     loadDraft();
@@ -67,7 +67,7 @@ function EditorContent() {
     }
     
     if (response.data) {
-      const data = response.data;
+      const data = response.data as any; // Type assertion for API response
       // Transform snake_case to camelCase
       const transformedDraft = {
         ...data,
@@ -79,6 +79,10 @@ function EditorContent() {
         updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
         sentAt: data.sent_at ? new Date(data.sent_at) : null,
         scheduledFor: data.scheduled_for ? new Date(data.scheduled_for) : null,
+        // Voice training metadata
+        voiceTrainingUsed: data.voice_training_used || data.voiceTrainingUsed,
+        voiceSamplesCount: data.voice_samples_count || data.voiceSamplesCount,
+        generationMetadata: data.generation_metadata || data.generationMetadata,
       };
       setDraft(transformedDraft as Draft);
       
@@ -88,21 +92,15 @@ function EditorContent() {
       setContent(htmlContent);
       setOriginalContent(generatedContent); // Store original for revert
       
-      // Set initial content only if editor is not being edited by user
-      if (editorRef.current && !isUserEditingRef.current) {
-        editorRef.current.innerHTML = htmlContent;
-      }
+      // Parse content into sections
+      const parsedSections = parseNewsletterSections(htmlContent);
+      setSections(parsedSections);
+      
       
       setSubject(data.topic || `${data.bundle_name} Newsletter`);
     }
   }
   
-  // Effect to update editor when content changes from outside (e.g., initial load)
-  useEffect(() => {
-    if (editorRef.current && content && !isUserEditingRef.current) {
-      editorRef.current.innerHTML = content;
-    }
-  }, [content]);
 
   // Autosave with debouncing
   const saveContent = useCallback(async (htmlContent: string) => {
@@ -165,6 +163,7 @@ function EditorContent() {
   };
 
 
+
   const handleRevert = () => {
     if (!originalContent) return;
     
@@ -174,10 +173,10 @@ function EditorContent() {
     
     if (confirmRevert) {
       setContent(originalContent);
-      if (editorRef.current) {
-        editorRef.current.innerHTML = originalContent;
-      }
-      // Trigger autosave to update the database
+      // Re-parse sections from original content
+      const parsedSections = parseNewsletterSections(originalContent);
+      setSections(parsedSections);
+      // Save the reverted content
       saveContent(originalContent);
     }
   };
@@ -226,6 +225,54 @@ function EditorContent() {
   const handleClosePreview = () => {
     setPreviewMode(false);
     setPreviewHtml("");
+  };
+
+  // Section management functions
+  const handleSectionUpdate = (sectionId: string, updates: Partial<NewsletterSection>) => {
+    setSections(prev => {
+      const updated = prev.map(section => 
+        section.id === sectionId ? { ...section, ...updates } : section
+      );
+      
+      // Update main content when sections change
+      const newContent = reassembleNewsletterSections(updated);
+      setContent(newContent);
+      
+      return updated;
+    });
+  };
+
+  const handleSectionDelete = (sectionId: string) => {
+    setSections(prev => {
+      const updated = prev.filter(section => section.id !== sectionId);
+      const newContent = reassembleNewsletterSections(updated);
+      setContent(newContent);
+      return updated;
+    });
+  };
+
+
+  const handleSectionReorder = (sectionId: string, direction: 'up' | 'down') => {
+    setSections(prev => {
+      const currentIndex = prev.findIndex(s => s.id === sectionId);
+      if (currentIndex === -1) return prev;
+      
+      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      if (newIndex < 0 || newIndex >= prev.length) return prev;
+      
+      const updated = [...prev];
+      [updated[currentIndex], updated[newIndex]] = [updated[newIndex], updated[currentIndex]];
+      
+      // Update order values
+      updated.forEach((section, index) => {
+        section.order = index;
+      });
+      
+      const newContent = reassembleNewsletterSections(updated);
+      setContent(newContent);
+      
+      return updated;
+    });
   };
 
   if (error) {
@@ -355,6 +402,15 @@ function EditorContent() {
           </span>
         </div>
 
+        {/* Voice Training Status */}
+        <VoiceTrainingStatus 
+          voiceTrainingUsed={draft.voiceTrainingUsed}
+          voiceSamplesCount={draft.voiceSamplesCount}
+          tone={draft.tone}
+          generationMetadata={draft.generationMetadata}
+          className="mb-6"
+        />
+
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Editor */}
           <div className="lg:col-span-2 space-y-6">
@@ -374,29 +430,31 @@ function EditorContent() {
 
             {/* Content Editor */}
             <div>
-              <Label htmlFor="content" className="text-base font-semibold mb-2">
+              <Label htmlFor="content" className="text-base font-semibold mb-4">
                 Newsletter Content
               </Label>
-              <div className="bg-surface border border-border rounded-lg p-6 min-h-[600px]">
-                <div
-                  ref={editorRef}
-                  contentEditable
-                  suppressContentEditableWarning
-                  onInput={(e) => {
-                    isUserEditingRef.current = true;
-                    setContent(e.currentTarget.innerHTML);
-                  }}
-                  onBlur={() => {
-                    isUserEditingRef.current = false;
-                  }}
-                  className="prose prose-sm max-w-none focus:outline-none"
-                  style={{
-                    minHeight: "500px",
-                  }}
-                />
+              
+              <div className="space-y-4">
+                {sections.map((section, index) => (
+                  <SectionEditor
+                    key={section.id}
+                    section={section}
+                    onUpdate={handleSectionUpdate}
+                    onDelete={handleSectionDelete}
+                    onReorder={handleSectionReorder}
+                    canMoveUp={index > 0}
+                    canMoveDown={index < sections.length - 1}
+                  />
+                ))}
+                {sections.length === 0 && (
+                  <div className="bg-surface border border-border rounded-lg p-8 text-center">
+                    <p className="text-muted">No sections found in this draft.</p>
+                  </div>
+                )}
               </div>
+              
               <p className="text-xs text-muted mt-2">
-                Click to edit. Changes are automatically saved.
+                Edit individual sections. Changes are automatically saved.
               </p>
             </div>
 
@@ -436,20 +494,6 @@ function EditorContent() {
               </Button>
             </div>
 
-            {/* Feedback */}
-            <div className="bg-surface border border-border rounded-lg p-4">
-              <h3 className="font-semibold mb-4">How's this draft?</h3>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  <ThumbsUp className="h-4 w-4" />
-                  Good
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1">
-                  <ThumbsDown className="h-4 w-4" />
-                  Needs Work
-                </Button>
-              </div>
-            </div>
 
             {/* Source Bundle */}
             <div className="bg-surface border border-border rounded-lg p-4">

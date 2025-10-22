@@ -18,6 +18,38 @@ export interface ApiResponse<T> {
   error?: ApiError;
 }
 
+// Voice Training Types
+export interface VoiceSample {
+  id: string;
+  user_id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VoiceSampleCreate {
+  title: string;
+  content: string;
+}
+
+export interface VoiceSamplesUploadRequest {
+  samples: VoiceSampleCreate[];
+}
+
+export interface VoiceSamplesUploadResponse {
+  created_count: number;
+  sample_ids: string[];
+  message: string;
+}
+
+export interface VoiceTrainingStatus {
+  has_samples: boolean;
+  sample_count: number;
+  last_updated?: string;
+  is_active: boolean;
+}
+
 // Auth helpers
 export async function getAuthToken(): Promise<string | null> {
   const { data: { session } } = await supabase.auth.getSession();
@@ -95,8 +127,8 @@ export async function signup(email: string, name: string, timezone?: string) {
     body: JSON.stringify({ email, name, timezone }),
   });
   
-  if (response.data) {
-    setAuthToken(response.data.access_token);
+  if (response.data && typeof response.data === 'object' && response.data !== null && 'access_token' in response.data) {
+    setAuthToken((response.data as any).access_token);
   }
   
   return response;
@@ -108,8 +140,8 @@ export async function login(email: string, password: string) {
     body: JSON.stringify({ email, password }),
   });
   
-  if (response.data) {
-    setAuthToken(response.data.access_token);
+  if (response.data && typeof response.data === 'object' && response.data !== null && 'access_token' in response.data) {
+    setAuthToken((response.data as any).access_token);
   }
   
   return response;
@@ -214,15 +246,6 @@ export async function regenerateSection(draftId: string, section: string) {
   });
 }
 
-export async function saveFeedback(
-  draftId: string,
-  sectionId: string,
-  reaction: 'thumbs_up' | 'thumbs_down'
-) {
-  return await apiRequest(`/api/drafts/${draftId}/reactions?section_id=${sectionId}&reaction=${reaction}`, {
-    method: 'POST',
-  });
-}
 
 // ============= Analytics API =============
 
@@ -350,6 +373,48 @@ export async function updateAutoNewsletter(id: string, updates: Partial<{
 export async function deleteAutoNewsletter(id: string) {
   return await apiRequest(`/api/auto-newsletters/${id}`, {
     method: 'DELETE',
+  });
+}
+
+// Voice Training API functions
+export async function getVoiceSamples(limit: number = 20) {
+  return await apiRequest<VoiceSample[]>(`/api/voice-training/samples?limit=${limit}`);
+}
+
+export async function createVoiceSample(sample: VoiceSampleCreate) {
+  return await apiRequest<VoiceSample>('/api/voice-training/samples', {
+    method: 'POST',
+    body: JSON.stringify(sample),
+  });
+}
+
+export async function uploadVoiceSamples(samples: VoiceSampleCreate[]) {
+  return await apiRequest<VoiceSamplesUploadResponse>('/api/voice-training/samples/upload', {
+    method: 'POST',
+    body: JSON.stringify({ samples }),
+  });
+}
+
+export async function updateVoiceSample(id: string, updates: Partial<VoiceSampleCreate>) {
+  return await apiRequest<VoiceSample>(`/api/voice-training/samples/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+}
+
+export async function deleteVoiceSample(id: string) {
+  return await apiRequest<void>(`/api/voice-training/samples/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function getVoiceTrainingStatus() {
+  return await apiRequest<VoiceTrainingStatus>('/api/voice-training/status');
+}
+
+export async function clearAllVoiceSamples() {
+  return await apiRequest<{ message: string; cleared_count: number }>('/api/voice-training/samples/clear', {
+    method: 'POST',
   });
 }
 

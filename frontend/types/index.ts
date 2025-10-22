@@ -41,6 +41,15 @@ export interface Draft {
   updatedAt: Date | null;
   sentAt?: Date | null;
   scheduledFor?: Date | null;
+  // Voice training metadata
+  voiceTrainingUsed?: boolean;
+  voiceSamplesCount?: number;
+  generationMetadata?: {
+    voiceTrainingActive: boolean;
+    samplesUsed: number;
+    tonePreset: string;
+    voiceSamplesTitles: string[];
+  };
 }
 
 export interface DraftSection {
@@ -50,14 +59,6 @@ export interface DraftSection {
   order: number;
 }
 
-export interface Feedback {
-  id: string;
-  draftId: string;
-  sectionId?: string;
-  reaction: "thumbs_up" | "thumbs_down";
-  editDiff?: string;
-  createdAt: Date;
-}
 
 export interface Analytics {
   id: string;
