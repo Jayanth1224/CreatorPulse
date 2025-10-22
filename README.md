@@ -101,16 +101,6 @@ CreatorPulse/
 - ✅ Supabase database integration ready
 - ✅ Email service framework
 
-### Coming Soon
-- 🚧 Authentication (Supabase Auth)
-- 🚧 Real-time autosave
-- 🚧 Scheduled draft delivery (8 AM daily)
-- 🚧 Custom bundle creation
-- 🚧 Voice training from writing samples
-- 🚧 Background RSS crawler jobs
-- 🚧 Advanced analytics and charts
-- 🚧 Multi-recipient lists
-
 ## 🛠️ Tech Stack
 
 ### Frontend
@@ -126,7 +116,7 @@ CreatorPulse/
 - **AI**: Openrouter API (GLM-4.5-air free model)
 - **RSS**: feedparser
 - **Email**: SendGrid/Mailgun/SMTP
-- **Deployment**: Railway/Render
+- **Deployment**: Vercel
 
 ## 📊 Database Schema
 
