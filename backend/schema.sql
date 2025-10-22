@@ -60,6 +60,21 @@ CREATE TABLE IF NOT EXISTS drafts (
     scheduled_for TIMESTAMP WITH TIME ZONE
 );
 
+-- Auto Newsletters table (Supabase-backed)
+CREATE TABLE IF NOT EXISTS auto_newsletters (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    bundle_id UUID REFERENCES bundles(id) ON DELETE SET NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    schedule_time TIME WITH TIME ZONE DEFAULT '08:00:00-00',
+    schedule_frequency TEXT DEFAULT 'daily', -- daily | weekly | monthly
+    schedule_day INTEGER, -- 1-7 (Mon-Sun) or 1-31
+    email_recipients TEXT[] DEFAULT ARRAY[]::TEXT[],
+    last_generated TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Feedback table
 CREATE TABLE IF NOT EXISTS feedback (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -112,6 +127,8 @@ CREATE TABLE IF NOT EXISTS content_entries (
 CREATE INDEX IF NOT EXISTS idx_drafts_user_id ON drafts(user_id);
 CREATE INDEX IF NOT EXISTS idx_drafts_status ON drafts(status);
 CREATE INDEX IF NOT EXISTS idx_drafts_created_at ON drafts(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_auto_newsletters_user_id ON auto_newsletters(user_id);
+CREATE INDEX IF NOT EXISTS idx_auto_newsletters_active ON auto_newsletters(is_active);
 CREATE INDEX IF NOT EXISTS idx_bundles_user_id ON bundles(user_id);
 CREATE INDEX IF NOT EXISTS idx_bundles_is_preset ON bundles(is_preset);
 CREATE INDEX IF NOT EXISTS idx_analytics_draft_id ON analytics(draft_id);
@@ -138,6 +155,9 @@ CREATE TRIGGER update_bundles_updated_at BEFORE UPDATE ON bundles
 CREATE TRIGGER update_drafts_updated_at BEFORE UPDATE ON drafts
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_auto_newsletters_updated_at BEFORE UPDATE ON auto_newsletters
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER update_esp_credentials_updated_at BEFORE UPDATE ON esp_credentials
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -150,6 +170,7 @@ ALTER TABLE feedback ENABLE ROW LEVEL SECURITY;
 ALTER TABLE analytics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE esp_credentials ENABLE ROW LEVEL SECURITY;
 ALTER TABLE content_entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE auto_newsletters ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for users
 CREATE POLICY "Users can view own profile" ON users
@@ -182,6 +203,19 @@ CREATE POLICY "Users can update own drafts" ON drafts
     FOR UPDATE USING (user_id = auth.uid());
 
 CREATE POLICY "Users can delete own drafts" ON drafts
+    FOR DELETE USING (user_id = auth.uid());
+
+-- RLS Policies for auto_newsletters
+CREATE POLICY "Users can view own auto newsletters" ON auto_newsletters
+    FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "Users can create own auto newsletters" ON auto_newsletters
+    FOR INSERT WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Users can update own auto newsletters" ON auto_newsletters
+    FOR UPDATE USING (user_id = auth.uid());
+
+CREATE POLICY "Users can delete own auto newsletters" ON auto_newsletters
     FOR DELETE USING (user_id = auth.uid());
 
 -- RLS Policies for feedback

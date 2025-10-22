@@ -214,7 +214,7 @@ function DraftCard({ draft }: { draft: Draft }) {
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
             <h3 className="font-semibold text-lg">
-              {draft.topic || `${draft.bundleName} Newsletter`}
+              {draft.topic || `${draft.bundleName || 'Newsletter'} Newsletter`}
             </h3>
             <Badge variant={status.variant} className="flex items-center gap-1">
               {status.icon}
@@ -226,13 +226,13 @@ function DraftCard({ draft }: { draft: Draft }) {
           </div>
           
           <p className="text-sm text-muted mb-3">
-            {draft.bundleName} • {draft.tone} tone • {formatDateTime(draft.createdAt)}
+            {draft.bundleName || 'Unknown Bundle'} • {draft.tone || 'default'} tone • {formatDateTime(draft.createdAt)}
           </p>
 
           <div
             className="text-sm text-foreground line-clamp-2 prose prose-sm max-w-none"
             dangerouslySetInnerHTML={{
-              __html: draft.generatedHtml.substring(0, 200) + "...",
+              __html: (draft.generatedHtml || "").substring(0, 200) + "...",
             }}
           />
         </div>

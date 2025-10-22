@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/layout/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,21 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { tonePresets } from "@/lib/mock-data";
-import { Check, Mail, AlertCircle, Upload } from "lucide-react";
+import { Check, Mail, AlertCircle, Upload, Clock, Calendar, Settings, Plus, Trash2, Play } from "lucide-react";
 import { SourceManager } from "@/components/SourceManager";
 import { Source } from "@/types";
+import {
+  listAutoNewsletters,
+  createAutoNewsletter,
+  updateAutoNewsletter,
+  deleteAutoNewsletter,
+  generateAutoNewsletterNow,
+  type AutoNewsletter,
+  getBundles,
+} from "@/lib/api-client";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
-export default function SettingsPage() {
+function SettingsPageContent() {
   const [activeSection, setActiveSection] = useState<string>("account");
 
   return (
@@ -61,6 +71,12 @@ export default function SettingsPage() {
               Content Sources
             </NavButton>
             <NavButton
+              active={activeSection === "auto-newsletter"}
+              onClick={() => setActiveSection("auto-newsletter")}
+            >
+              Auto Newsletter
+            </NavButton>
+            <NavButton
               active={activeSection === "billing"}
               onClick={() => setActiveSection("billing")}
             >
@@ -75,11 +91,20 @@ export default function SettingsPage() {
             {activeSection === "recipients" && <RecipientsSection />}
             {activeSection === "tone" && <ToneSection />}
             {activeSection === "sources" && <SourcesSection />}
+            {activeSection === "auto-newsletter" && <AutoNewsletterSection />}
             {activeSection === "billing" && <BillingSection />}
           </div>
         </div>
       </main>
     </>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <ProtectedRoute>
+      <SettingsPageContent />
+    </ProtectedRoute>
   );
 }
 
@@ -507,6 +532,413 @@ function SourcesSection() {
         />
       </CardContent>
     </Card>
+  );
+}
+
+function AutoNewsletterSection() {
+  const [autoNewsletters, setAutoNewsletters] = useState<AutoNewsletter[]>([]);
+  const [bundles, setBundles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newNewsletter, setNewNewsletter] = useState({
+    bundleId: "",
+    scheduleTime: "08:00:00",
+    scheduleFrequency: "daily",
+    scheduleDay: null as number | null,
+    emailRecipients: [""]
+  });
+
+  // Load from API
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      console.log('Loading auto-newsletters and bundles...');
+      try {
+        const [newslettersRes, bundlesRes] = await Promise.all([
+          listAutoNewsletters(),
+          getBundles()
+        ]);
+        console.log('Newsletters response:', newslettersRes);
+        console.log('Bundles response:', bundlesRes);
+        
+        // Handle newsletters response
+        if (newslettersRes.error) {
+          console.error('Newsletters API error:', newslettersRes.error);
+          setAutoNewsletters([]);
+        } else if (newslettersRes.data) {
+          setAutoNewsletters(newslettersRes.data);
+        } else {
+          console.warn('No newsletters data received');
+          setAutoNewsletters([]);
+        }
+        
+        // Handle bundles response
+        if (bundlesRes.error) {
+          console.error('Bundles API error:', bundlesRes.error);
+          setBundles([]);
+        } else if (bundlesRes.data) {
+          const bundlesArray = Array.isArray(bundlesRes.data) ? bundlesRes.data : [];
+          console.log('Setting bundles:', bundlesArray);
+          setBundles(bundlesArray);
+        } else {
+          console.warn('No bundles data received');
+          setBundles([]);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        setBundles([]);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const handleCreateNewsletter = async () => {
+    if (!newNewsletter.bundleId) {
+      alert("Select a content bundle");
+      return;
+    }
+    setLoading(true);
+    console.log('Creating auto-newsletter with data:', {
+      bundle_id: newNewsletter.bundleId,
+      schedule_time: newNewsletter.scheduleTime,
+      schedule_frequency: newNewsletter.scheduleFrequency,
+      schedule_day: newNewsletter.scheduleDay,
+      email_recipients: newNewsletter.emailRecipients.filter(e => e.trim())
+    });
+    const res = await createAutoNewsletter({
+      bundle_id: newNewsletter.bundleId,
+      schedule_time: newNewsletter.scheduleTime,
+      schedule_frequency: newNewsletter.scheduleFrequency as any,
+      schedule_day: newNewsletter.scheduleDay,
+      email_recipients: newNewsletter.emailRecipients.filter(e => e.trim())
+    });
+    console.log('API Response:', res);
+    setLoading(false);
+    if (res.error) {
+      console.error('Error creating auto-newsletter:', res.error);
+      alert(`Failed to create auto-newsletter: ${res.error.detail || JSON.stringify(res.error)}`);
+      return;
+    }
+    setShowCreateForm(false);
+    setNewNewsletter({ bundleId: "", scheduleTime: "08:00:00", scheduleFrequency: "daily", scheduleDay: null, emailRecipients: [""] });
+    
+    // Reload the list
+    try {
+      const list = await listAutoNewsletters();
+      if (list.error) {
+        console.error('Error reloading newsletters:', list.error);
+        setAutoNewsletters([]);
+      } else if (list.data) {
+        setAutoNewsletters(list.data);
+      } else {
+        setAutoNewsletters([]);
+      }
+    } catch (error) {
+      console.error('Error reloading newsletters:', error);
+      setAutoNewsletters([]);
+    }
+  };
+
+  const handleToggleActive = async (id: string, current: boolean) => {
+    await updateAutoNewsletter(id, { is_active: !current });
+    try {
+      const list = await listAutoNewsletters();
+      if (list.error) {
+        console.error('Error reloading newsletters:', list.error);
+        setAutoNewsletters([]);
+      } else if (list.data) {
+        setAutoNewsletters(list.data);
+      } else {
+        setAutoNewsletters([]);
+      }
+    } catch (error) {
+      console.error('Error reloading newsletters:', error);
+      setAutoNewsletters([]);
+    }
+  };
+
+  const handleDeleteNewsletter = async (id: string) => {
+    if (!confirm("Delete this auto newsletter?")) return;
+    await deleteAutoNewsletter(id);
+    try {
+      const list = await listAutoNewsletters();
+      if (list.error) {
+        console.error('Error reloading newsletters:', list.error);
+        setAutoNewsletters([]);
+      } else if (list.data) {
+        setAutoNewsletters(list.data);
+      } else {
+        setAutoNewsletters([]);
+      }
+    } catch (error) {
+      console.error('Error reloading newsletters:', error);
+      setAutoNewsletters([]);
+    }
+  };
+
+  const handleGenerateNow = async (id: string) => {
+    setLoading(true);
+    const res = await generateAutoNewsletterNow(id);
+    setLoading(false);
+    if (res.error) {
+      alert(res.error.detail);
+    } else {
+      alert("Generated and emailed. Check your inbox.");
+    }
+  };
+
+  const formatLastGenerated = (dateString: string | null) => {
+    if (!dateString) return "Never";
+    const date = new Date(dateString);
+    return date.toLocaleDateString() + " at " + date.toLocaleTimeString();
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Auto Newsletter
+          </CardTitle>
+          <CardDescription>
+            Set up automated newsletter generation and delivery. Get fresh newsletters delivered to your email automatically.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {(!autoNewsletters || autoNewsletters.length === 0) ? (
+              <div className="text-center py-8">
+                <Calendar className="h-12 w-12 text-muted mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Auto Newsletters</h3>
+                <p className="text-muted mb-4">
+                  Create your first auto-newsletter to get started with automated content generation.
+                </p>
+                <Button onClick={() => setShowCreateForm(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Auto Newsletter
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {autoNewsletters.map((newsletter) => (
+                  <div key={newsletter.id} className="border border-border rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-muted" />
+                          <span className="font-medium">{newsletter.bundle_id}</span>
+                        </div>
+                        <Badge variant={newsletter.is_active ? "success" : "secondary"}>
+                          {newsletter.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleToggleActive(newsletter.id, newsletter.is_active)}
+                        >
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteNewsletter(newsletter.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleGenerateNow(newsletter.id)}
+                        >
+                          <Play className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-muted">Schedule:</span>
+                        <span className="ml-2 font-medium">
+                          {newsletter.schedule_frequency} at {newsletter.schedule_time}
+                          {newsletter.schedule_day && ` (Day ${newsletter.schedule_day})`}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted">Last Generated:</span>
+                        <span className="ml-2 font-medium">
+                          {formatLastGenerated(newsletter.last_generated || null)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted">Recipients:</span>
+                        <span className="ml-2 font-medium">
+                          {newsletter.email_recipients.length} email(s)
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted">Status:</span>
+                        <span className="ml-2 font-medium">
+                          {newsletter.is_active ? "Running" : "Paused"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                <Button onClick={() => setShowCreateForm(true)} className="w-full">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Another Auto Newsletter
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {showCreateForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Create Auto Newsletter</CardTitle>
+            <CardDescription>
+              Set up automated newsletter generation for your content bundle
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="bundle">Content Bundle</Label>
+              <Select
+                id="bundle"
+                value={newNewsletter.bundleId}
+                onChange={(e) => setNewNewsletter({...newNewsletter, bundleId: e.target.value})}
+                className="mt-2"
+              >
+                <option value="">Select a bundle ({bundles.length} available)</option>
+                {bundles.map(bundle => (
+                  <option key={bundle.id} value={bundle.id}>{bundle.label || bundle.name}</option>
+                ))}
+              </Select>
+              {bundles.length === 0 && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Loading bundles... If this persists, check browser console.
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="schedule-time">Delivery Time (HH:MM:SS)</Label>
+                <Input
+                  id="schedule-time"
+                  type="text"
+                  value={newNewsletter.scheduleTime}
+                  onChange={(e) => setNewNewsletter({...newNewsletter, scheduleTime: e.target.value})}
+                  className="mt-2"
+                />
+              </div>
+              <div>
+                <Label htmlFor="frequency">Frequency</Label>
+                <Select
+                  id="frequency"
+                  value={newNewsletter.scheduleFrequency}
+                  onChange={(e) => setNewNewsletter({...newNewsletter, scheduleFrequency: e.target.value})}
+                  className="mt-2"
+                >
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </Select>
+              </div>
+            </div>
+
+            {(newNewsletter.scheduleFrequency === "weekly" || newNewsletter.scheduleFrequency === "monthly") && (
+              <div>
+                <Label htmlFor="schedule-day">
+                  {newNewsletter.scheduleFrequency === "weekly" ? "Day of Week" : "Day of Month"}
+                </Label>
+                <Select
+                  id="schedule-day"
+                  value={newNewsletter.scheduleDay || ""}
+                  onChange={(e) => setNewNewsletter({...newNewsletter, scheduleDay: parseInt(e.target.value)})}
+                  className="mt-2"
+                >
+                  {newNewsletter.scheduleFrequency === "weekly" ? (
+                    <>
+                      <option value="1">Monday</option>
+                      <option value="2">Tuesday</option>
+                      <option value="3">Wednesday</option>
+                      <option value="4">Thursday</option>
+                      <option value="5">Friday</option>
+                      <option value="6">Saturday</option>
+                      <option value="7">Sunday</option>
+                    </>
+                  ) : (
+                    Array.from({length: 31}, (_, i) => (
+                      <option key={i+1} value={i+1}>{i+1}</option>
+                    ))
+                  )}
+                </Select>
+              </div>
+            )}
+
+            <div>
+              <Label htmlFor="recipients">Email Recipients</Label>
+              <div className="space-y-2 mt-2">
+                {newNewsletter.emailRecipients.map((email, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      type="email"
+                      placeholder="recipient@example.com"
+                      value={email}
+                      onChange={(e) => {
+                        const newRecipients = [...newNewsletter.emailRecipients];
+                        newRecipients[index] = e.target.value;
+                        setNewNewsletter({...newNewsletter, emailRecipients: newRecipients});
+                      }}
+                    />
+                    {newNewsletter.emailRecipients.length > 1 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const newRecipients = newNewsletter.emailRecipients.filter((_, i) => i !== index);
+                          setNewNewsletter({...newNewsletter, emailRecipients: newRecipients});
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setNewNewsletter({
+                    ...newNewsletter,
+                    emailRecipients: [...newNewsletter.emailRecipients, ""]
+                  })}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Recipient
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button onClick={handleCreateNewsletter}>
+                Create Auto Newsletter
+              </Button>
+              <Button variant="outline" onClick={() => setShowCreateForm(false)}>
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }
 

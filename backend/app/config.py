@@ -43,6 +43,10 @@ class Settings(BaseSettings):
     from_email: str = "noreply@creatorpulse.com"
     from_name: str = "CreatorPulse"
     
+    # Advanced Auto-Newsletter API Keys (optional)
+    firecrawl_api_key: str = ""
+    google_trends_api_key: str = ""
+    
     @property
     def cors_origins_list(self) -> List[str]:
         """Convert comma-separated CORS origins to list"""

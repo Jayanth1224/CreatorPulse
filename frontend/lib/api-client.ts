@@ -296,3 +296,61 @@ export async function validateSource(source: { type: string; value: string; labe
   });
 }
 
+// ============= Auto-Newsletter API =============
+
+export interface AutoNewsletter {
+  id: string;
+  user_id: string;
+  bundle_id: string;
+  is_active: boolean;
+  schedule_time: string;
+  schedule_frequency: 'daily' | 'weekly' | 'monthly';
+  schedule_day?: number | null;
+  email_recipients: string[];
+  last_generated?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function listAutoNewsletters() {
+  return await apiRequest<AutoNewsletter[]>('/api/auto-newsletters/');
+}
+
+export async function createAutoNewsletter(payload: {
+  bundle_id: string;
+  schedule_time?: string;
+  schedule_frequency?: 'daily' | 'weekly' | 'monthly';
+  schedule_day?: number | null;
+  email_recipients?: string[];
+}) {
+  return await apiRequest<AutoNewsletter>('/api/auto-newsletters/', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateAutoNewsletter(id: string, updates: Partial<{
+  is_active: boolean;
+  schedule_time: string;
+  schedule_frequency: 'daily' | 'weekly' | 'monthly';
+  schedule_day: number | null;
+  email_recipients: string[];
+}>) {
+  return await apiRequest<AutoNewsletter>(`/api/auto-newsletters/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates),
+  });
+}
+
+export async function deleteAutoNewsletter(id: string) {
+  return await apiRequest(`/api/auto-newsletters/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function generateAutoNewsletterNow(id: string) {
+  return await apiRequest(`/api/auto-newsletters/${id}/generate`, {
+    method: 'POST',
+  });
+}
+

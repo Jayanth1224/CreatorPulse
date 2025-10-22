@@ -7,13 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { getDraft, updateDraft, sendDraft, regenerateSection, saveFeedback } from "@/lib/api-client";
+import { getDraft, updateDraft, sendDraft } from "@/lib/api-client";
 import { supabase } from "@/lib/supabase-client";
 import { Draft } from "@/types";
 import {
   Save,
   Send,
-  RefreshCw,
   ArrowLeft,
   ThumbsUp,
   ThumbsDown,
@@ -165,19 +164,6 @@ function EditorContent() {
     }
   };
 
-  const handleRegenerate = async (section: string) => {
-    const response = await regenerateSection(draftId, section);
-    
-    if (response.data) {
-      // Update content with regenerated section
-      // This is simplified - in production you'd merge the new section
-      alert(`${section} section regenerated!`);
-    }
-  };
-
-  const handleFeedback = async (sectionId: string, reaction: 'thumbs_up' | 'thumbs_down') => {
-    await saveFeedback(draftId, sectionId, reaction);
-  };
 
   const handleRevert = () => {
     if (!originalContent) return;
@@ -414,33 +400,6 @@ function EditorContent() {
               </p>
             </div>
 
-            {/* Section Actions */}
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleRegenerate("intro")}
-              >
-                <RefreshCw className="h-4 w-4" />
-                Regenerate Intro
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleRegenerate("insights")}
-              >
-                <RefreshCw className="h-4 w-4" />
-                Regenerate Insights
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleRegenerate("trends")}
-              >
-                <RefreshCw className="h-4 w-4" />
-                Regenerate Trends
-              </Button>
-            </div>
           </div>
 
           {/* Sidebar */}
@@ -492,22 +451,81 @@ function EditorContent() {
               </div>
             </div>
 
-            {/* Sources */}
+            {/* Source Bundle */}
             <div className="bg-surface border border-border rounded-lg p-4">
-              <h3 className="font-semibold mb-3">Sources ({draft.sources.length})</h3>
-              <div className="space-y-2">
-                {draft.sources.slice(0, 5).map((source, idx) => (
-                  <a
-                    key={idx}
-                    href={source}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-primary hover:underline block truncate"
-                  >
-                    {source}
-                  </a>
-                ))}
+              <h3 className="font-semibold mb-3 text-sm">Source Bundle</h3>
+              <div className="max-h-64 overflow-y-auto space-y-3">
+                {draft.sources.map((source, idx) => {
+                  // Extract domain name from URL for display
+                  const getDomainName = (url: string) => {
+                    try {
+                      const domain = new URL(url).hostname;
+                      return domain.replace('www.', '');
+                    } catch {
+                      return 'Source';
+                    }
+                  };
+                  
+                  // Generate a brief description based on the source
+                  const getSourceDescription = (url: string) => {
+                    const domain = getDomainName(url).toLowerCase();
+                    if (domain.includes('techcrunch')) {
+                      return 'AI is revolutionizing content creation...';
+                    } else if (domain.includes('verge')) {
+                      return 'Creators must navigate the ethical considerations...';
+                    } else if (domain.includes('wired')) {
+                      return 'Latest insights on technology trends...';
+                    } else if (domain.includes('medium')) {
+                      return 'Thought leadership and industry analysis...';
+                    } else {
+                      return 'Latest updates and insights...';
+                    }
+                  };
+
+                  return (
+                    <div key={idx} className="border-b border-border/50 pb-3 last:border-b-0 last:pb-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm text-foreground mb-1 truncate">
+                            {getDomainName(source)}
+                          </h4>
+                          <p className="text-xs text-muted-foreground mb-2 leading-relaxed">
+                            {getSourceDescription(source)}
+                          </p>
+                        </div>
+                      </div>
+                      <a
+                        href={source}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1"
+                      >
+                        Open original
+                        <svg 
+                          className="w-3 h-3" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={2} 
+                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" 
+                          />
+                        </svg>
+                      </a>
+                    </div>
+                  );
+                })}
               </div>
+              {draft.sources.length > 6 && (
+                <div className="mt-3 pt-2 border-t border-border/50">
+                  <p className="text-xs text-muted-foreground text-center">
+                    Showing all {draft.sources.length} sources
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Tips */}
